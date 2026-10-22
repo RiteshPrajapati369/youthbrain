@@ -1,0 +1,82 @@
+# Deployment
+
+This document describes the production deployment pipeline for the YouTh Brain News
+portal (https://youthbrainnews.com.np).
+
+## Production Platform: Cloudflare Workers
+
+The portal is deployed globally to **Cloudflare Workers** using the official
+OpenNext adapter (`@opennextjs/cloudflare`) paired with `wrangler`. The edge worker
+executes the full Next.js 14 Node.js runtime (Server Components, Route Handlers,
+Middleware, Server Actions) via the `nodejs_compat` compatibility flag.
+
+### Deployment Architecture
+
+- **Next.js Compilation:** `npm run build`
+- **OpenNext Transformation:** `npx opennextjs-cloudflare build`
+- **Cloudflare Edge Deployment:** `npx wrangler deploy`
+- **Custom Domain Binding:** `wrangler.jsonc` binds `youthbrainnews.com.np`
+
+### Build & Deploy Commands
+
+```bash
+npm run build
+npx opennextjs-cloudflare build
+npx wrangler deploy
+npm run preview
+```
+
+## Production Environment Variables & Secrets
+
+| Variable Name                    | Scope         | Sensitivity | Purpose                                      |
+|----------------------------------|---------------|-------------|----------------------------------------------|
+| NEXT_PUBLIC_SUPABASE_URL         | Client/Server | Public      | Supabase endpoint                            |
+| NEXT_PUBLIC_SUPABASE_ANON_KEY    | Client/Server | Public      | Anon key                                     |
+| SUPABASE_SERVICE_ROLE_KEY        | Server Only   | **SECRET**  | Admin Supabase access                        |
+| RESEND_API_KEY                   | Server Only   | **SECRET**  | Contact email delivery                       |
+| OWNER_EMAIL                      | Server Only   | Internal    | panditritesh005@gmail.com                    |
+| EMAIL_FROM                       | Server Only   | Internal    | Verified sender                              |
+| NEXT_PUBLIC_SITE_URL             | Client/Server | Public      | https://youthbrainnews.com.np                |
+| NEXT_PUBLIC_PORTFOLIO_PROFILE_ID | Client/Server | Public      | Owner profile UUID                           |
+| NEXT_PUBLIC_DEFAULT_LOCALE       | Client/Server | Public      | ne                                           |
+
+## Managing Cloudflare Secrets via CLI
+
+```bash
+echo "re_YOUR_KEY" | npx wrangler secret put RESEND_API_KEY
+echo "YOUR_SERVICE_KEY" | npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+npx wrangler secret list
+```
+
+## Custom Domain Configuration (`wrangler.jsonc`)
+
+```json
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "youth-brain-news",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2024-09-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "routes": [
+    {
+      "pattern": "youthbrainnews.com.np",
+      "custom_domain": true
+    }
+  ]
+}
+```
+
+## Post-Deployment Verification Checklist
+
+1. [x] Homepage loads in Nepali by default.
+2. [x] Language switcher changes to English and persists for the session.
+3. [x] Light / Dark mode toggle works with correct color tokens.
+4. [x] Articles render in both locales with correct hreflang.
+5. [x] Dynamic sitemap and robots.txt return 200.
+6. [x] Contact form dispatches via Resend.
+7. [x] Login enforces TOTP; 3 failures lock for 10 minutes.
+8. [x] Admin CMS controls all articles, categories, media, homepage.

@@ -1,0 +1,89 @@
+# Database
+
+This document outlines the Supabase PostgreSQL database architecture, table schemas,
+Row Level Security (RLS) policies, and storage bucket configurations for the
+YouTh Brain News portal.
+
+## Single Source of Truth
+
+Supabase PostgreSQL is the authoritative data store. All tables utilize:
+- Row Level Security (RLS) enabled by default.
+- Profile-based ownership (`profile_id` referencing `profiles.id`).
+- Soft-delete semantics (`deleted_at TIMESTAMPTZ`).
+- Automated audit tracking (`created_at`, `updated_at`, `created_by`, `updated_by`).
+- Multilingual content stored as JSONB or separate locale columns where appropriate.
+
+## Database Tables & Schema Summary
+
+### 1. profiles
+Owner identity and portal branding.
+- `id`, `user_id`, `full_name`, `headline`, `bio`, `about_description`,
+  `avatar_url`, `email`, `phone`, `location`, `status`, timestamps
+
+### 2. categories
+News categories (Politics, Technology, Youth, Education, Sports, Culture…).
+- `id`, `profile_id`, `name_ne`, `name_en`, `slug`, `description_ne`,
+  `description_en`, `color`, `sort_order`, `is_active`, timestamps
+
+### 3. articles
+Core news content.
+- `id`, `profile_id`, `category_id`, `title_ne`, `title_en`, `slug`,
+  `summary_ne`, `summary_en`, `content_ne`, `content_en`,
+  `cover_image_url`, `status` ('draft'|'published'|'archived'),
+  `is_breaking`, `is_featured`, `published_at`, `view_count`,
+  `seo_title`, `seo_description`, timestamps
+
+### 4. article_images & media
+Inline images and media library.
+- `article_images`: `id`, `article_id`, `image_url`, `caption_ne`, `caption_en`, `sort_order`
+- `media`: `id`, `profile_id`, `url`, `alt_ne`, `alt_en`, `type`, `folder`
+
+### 5. homepage_sections
+Configurable homepage blocks (featured, category grids, ticker).
+- `id`, `profile_id`, `section_key`, `title_ne`, `title_en`, `config` (JSONB),
+  `sort_order`, `is_active`
+
+### 6. social_links
+Footer and schema social channels.
+- `id`, `profile_id`, `platform`, `url`, `label`, `icon_name`, `is_active`, `sort_order`
+
+### 7. contact_messages
+Inquiry intake.
+- `id`, `profile_id`, `name`, `email`, `subject`, `message`, `ip_address`,
+  `user_agent`, `status` ('new'|'read'|'replied'|'archived')
+
+### 8. login_attempts & mfa_factors
+Security monitoring.
+- `login_attempts`: `id`, `email`, `attempt_time`, `ip_address`, `success`, `failure_reason`
+- `mfa_factors`: enrollment metadata
+
+### 9. site_settings & seo_settings
+Portal configuration and meta.
+- Multilingual site title, tagline, copyright, OG image, etc.
+
+## Applied Migrations History
+
+1. `20241018000001_initial_schema.sql` – Core tables, triggers, FKs.
+2. `20241018000002_login_lockout_and_mfa.sql` – Lockout (10 min) & MFA tables.
+3. `20241018000003_storage_buckets.sql` – Storage definitions.
+4. `20241018000004_rls_and_security.sql` – Comprehensive RLS.
+5. `20241018000005_seed_data.sql` – Owner profile + sample categories/articles.
+6. `20241019000006_fix_permissions.sql` – Grants.
+7. `20241022000007_multilingual_and_homepage.sql` – Locale fields + homepage sections.
+
+## Storage Buckets
+
+| Bucket Name | Public Read | Write Access        | Primary Content              |
+|-------------|-------------|---------------------|------------------------------|
+| avatars     | Yes         | Authenticated Owner | Profile images               |
+| covers      | Yes         | Authenticated Owner | Article cover images         |
+| articles    | Yes         | Authenticated Owner | Inline article media         |
+| media       | Yes         | Authenticated Owner | General media library        |
+| gallery     | Yes         | Authenticated Owner | Photo galleries              |
+
+## Row Level Security (RLS) Rules
+
+- **Public Anonymous:** `SELECT` on published, non-deleted content. `INSERT` only on
+  `contact_messages` with `status='new'`.
+- **Authenticated Owner:** Full CRUD on all rows belonging to `user_id = auth.uid()`.
+- **Service Role:** Server-only elevated operations.

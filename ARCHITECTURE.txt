@@ -1,0 +1,134 @@
+# Architecture
+
+This document describes the comprehensive architecture of the YouTh Brain News
+portal (https://youthbrainnews.com.np). It is built with Next.js 14 (App Router),
+TypeScript, Tailwind CSS, next-intl (bilingual Nepali/English), Supabase
+(PostgreSQL, Storage, Row Level Security), and deployed globally on Cloudflare
+Workers using OpenNext.
+
+## Application Overview
+
+Single-owner news portal and Content Management System. The public site renders
+dynamic multilingual news content from Supabase; the admin dashboard allows the
+owner to manage all articles, categories, media, homepage sections, and security
+configurations. Supabase acts as the single source of truth — there is no local
+or mock content fallback. Empty, unavailable, and error states are handled with
+graceful fallbacks.
+
+Core Content Areas:
+- Breaking News & Top Stories
+- Category-based News (Politics, Technology, Sports, Education, Youth, Culture…)
+- Multilingual Articles (Nepali primary + English)
+- Photo Galleries & Media Library
+- Author / Editor Profiles
+- Contact & Newsletter Inquiries
+
+## Technology Stack
+
+- **Framework:** Next.js 14.2 (App Router)
+- **Language:** TypeScript 5.7+
+- **Internationalization:** next-intl (default locale: `ne` – Nepali)
+- **Production Edge Runtime:** Cloudflare Workers via @opennextjs/cloudflare
+- **Database & Auth:** Supabase PostgreSQL, Supabase Auth (@supabase/ssr)
+- **Email Delivery:** Resend API (Edge-native HTTPS dispatch)
+- **UI & Styling:** React 18, Tailwind CSS, Lucide Icons, Framer Motion
+- **Toasts & Feedback:** Sonner
+- **Schema Validation:** Zod
+- **MFA:** Time-Based One-Time Password (TOTP) via Google Authenticator
+- **SEO & Structured Data:** Schema.org JSON-LD (NewsMediaOrganization, NewsArticle),
+  dynamic sitemap.xml, robots.txt, hreflang tags for ne/en
+
+## Directory Structure
+
+```
+src/
+├── app/
+│   ├── [locale]/                    # Locale-aware routes (ne | en)
+│   │   ├── api/
+│   │   │   ├── contact/              # Contact inquiry endpoint
+│   │   │   └── dashboard/
+│   │   │       ├── articles/         # Article CRUD
+│   │   │       ├── categories/       # Category management
+│   │   │       ├── media/            # Media library
+│   │   │       ├── homepage/         # Homepage sections & featured
+│   │   │       └── upload/           # Storage upload handler
+│   │   ├── auth/
+│   │   │   ├── login/
+│   │   │   ├── mfa/
+│   │   │   └── callback/
+│   │   ├── news/
+│   │   │   ├── [slug]/               # Individual article page
+│   │   │   └── page.tsx              # News listing / category filter
+│   │   ├── category/[slug]/
+│   │   ├── dashboard/                # Protected CMS portal
+│   │   │   ├── articles/
+│   │   │   ├── categories/
+│   │   │   ├── media/
+│   │   │   ├── homepage/
+│   │   │   ├── messages/
+│   │   │   ├── profile/
+│   │   │   ├── security/
+│   │   │   ├── layout.tsx
+│   │   │   ├── loading.tsx
+│   │   │   └── page.tsx
+│   │   ├── layout.tsx
+│   │   ├── page.tsx                  # Public homepage
+│   │   ├── robots.ts
+│   │   └── sitemap.ts
+│   ├── layout.tsx
+│   └── globals.css
+├── components/
+│   ├── news/                         # ArticleCard, BreakingTicker, Markdown
+│   ├── dashboard/                    # DashboardNav, editors
+│   ├── sections/                     # Navbar, Hero, CategoryGrid, Footer
+│   ├── seo/                          # JsonLd
+│   └── ui/                           # ThemeToggle, LanguageSwitcher
+├── lib/
+│   ├── auth-actions.ts
+│   ├── i18n.ts                       # next-intl configuration & cookie helpers
+│   ├── owner-auth.ts
+│   ├── services.ts
+│   ├── storage.ts
+│   ├── supabase-*.ts
+├── middleware.ts                     # Locale detection + Edge auth fast-path
+└── types/
+```
+
+## Public Frontend Architecture
+
+```
+Navbar (Home · News · Categories · About · Contact) + Language Switcher + Theme Toggle
+Breaking News Ticker
+Hero / Featured Story
+Category Grids & Latest Articles
+Photo Gallery / Media Section
+Newsletter / Contact
+Footer (Social + Copyright)
+```
+
+1. **Default Locale:** Nepali (`ne`) is the primary language on first visit.
+2. **Language Persistence:** Chosen language is stored in a cookie (`yth_lang`) that
+   lasts for the browser session. Only an explicit switch changes it; closing the
+   browser resets to Nepali on next visit.
+3. **Theme:** Light / Dark mode with the YouTh Brain color system (see Development).
+4. **Article Architecture:** Dedicated routes `/[locale]/news/[slug]` with full
+   Markdown rendering, cover images, related articles, and NewsArticle JSON-LD.
+
+## Dashboard (CMS) Architecture
+
+1. **Authentication Guard:** Protected by Edge middleware and server layout checking
+   cryptographic session cookies (`ythbrain_owner_session`).
+2. **Edge Fast-Path:** Valid owner cookies are verified in 0.1ms without external
+   Supabase network round-trips.
+3. **Visual Feedback:** Dedicated `loading.tsx` and active button states.
+4. **Resilient API Handlers:** Dedicated server endpoints utilize `createAdminClient()`.
+5. **Full Control Modules:** Articles (draft/publish, multilingual fields, SEO),
+   Categories, Media Library, Homepage featured slots, Contact inbox, Profile,
+   Security (password + MFA + login logs).
+
+## Security Architecture
+
+1. **Owner-Only Authentication:** Exclusively accepts `panditritesh005@gmail.com`.
+2. **Mandatory TOTP MFA:** Every login requires Google Authenticator OTP.
+3. **Account Lockout:** 3 consecutive failed password attempts → 10-minute server-side lockout.
+4. **Edge Security Headers:** Strict CSP, HSTS, X-Frame-Options, Referrer-Policy.

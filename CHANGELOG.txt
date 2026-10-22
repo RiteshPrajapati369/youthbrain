@@ -1,0 +1,56 @@
+# Changelog
+
+All notable changes, architectural milestones, and security enhancements to the
+YouTh Brain News portal are documented in this file.
+
+## [v1.3.0] - 2026-10-22
+
+### Bilingual Experience (Nepali Primary)
+- Implemented next-intl with default locale `ne` (Nepali).
+- Language switcher stores preference in session cookie `yth_lang`.
+- Closing the browser or ending the session resets to Nepali.
+- Full hreflang and alternate links for SEO.
+
+### Design System & Theme
+- Light / Dark mode using the official YouTh Brain color tokens.
+- Primary accent `#235DBC`, secondary accents for category chips and CTAs.
+- Responsive typography and spacing optimized for news reading.
+
+### News Portal CMS Modules
+- Full article editor with multilingual title/summary/body fields.
+- Category management, featured/homepage slots, media library.
+- Breaking news ticker configuration from admin.
+
+### Technical SEO
+- Dynamic sitemap with locale-aware article URLs.
+- robots.txt shielding /dashboard, /auth, /api.
+- NewsArticle + NewsMediaOrganization JSON-LD.
+- Custom domain Cloudflare trigger for youthbrainnews.com.np.
+
+### Performance & Auth
+- Edge authentication fast-path (0.1 ms HMAC verification).
+- Instant loading skeletons for dashboard.
+- 3-failed-login → 10-minute lockout (updated from previous 24 h policy).
+
+### Contact & Email
+- Resend integration for inquiry alerts to panditritesh005@gmail.com.
+- Cloudflare Secrets for RESEND_API_KEY and SUPABASE_SERVICE_ROLE_KEY.
+
+## [v1.2.0] - 2026-10-19
+
+### Cloudflare Workers & Edge Migration
+- Adopted Cloudflare Workers via @opennextjs/cloudflare.
+- Configured wrangler.jsonc with nodejs_compat and ASSETS binding.
+
+## [v1.1.0] - 2026-10-18
+
+### Account Hardening
+- 10-minute server-side lockout after 3 failed attempts.
+- TOTP MFA enforced on every login.
+- Row Level Security across all tables.
+
+## [v1.0.0] - 2026-10-17
+
+### Initial YouTh Brain News Architecture
+- Next.js 14 App Router + Tailwind + Supabase foundation.
+- Core public sections and single-owner admin CMS skeleton.

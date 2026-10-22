@@ -1,0 +1,95 @@
+# Security Architecture & Operations
+
+This document outlines the security controls, authentication safeguards, data
+protection mechanisms, and defensive engineering practices implemented across the
+YouTh Brain News portal (https://youthbrainnews.com.np).
+
+## 1. Authentication & Identity Protection
+
+### Single-Owner Boundary
+- The administrative CMS is strictly restricted to the portal owner:
+  `panditritesh005@gmail.com`.
+- Arbitrary user registrations are completely disabled. Any newly registered
+  account or external OAuth login is blocked from accessing administrative routes.
+
+### Mandatory Multi-Factor Authentication (MFA)
+- Every successful password submission requires a Time-Based One-Time Password
+  (TOTP) validation step before session issuance.
+- The Google Authenticator issuer is branded cleanly as: **YouTh Brain News**.
+- MFA cannot be bypassed through session manipulation, URL tampering, or cookie
+  replay.
+
+### Account Lockout Mechanism
+- Consecutive failed password attempts are tracked in the `login_attempts` table.
+- **Lockout Policy:** 3 consecutive failures immediately trigger a strict **10-minute
+  lockout**.
+- The lockout is enforced server-side and account-wide. Switching browsers, devices,
+  networks, or IP addresses will not bypass the lockout timer.
+
+### Cryptographic Session Tokens
+- Owner sessions are secured with PBKDF2 with HMAC-SHA256 tokens stored in
+  `HttpOnly`, `SameSite=Lax`, `Secure` cookies (`ythbrain_owner_session`).
+- Tokens include cryptographic timestamps and automatically expire after 7 days.
+
+## 2. Edge Middleware & Fast-Path Authorization
+
+- **Edge Evaluation:** `src/middleware.ts` intercepts all incoming traffic at Cloudflare
+  edge nodes before hitting backend services.
+- **Fast-Path Verification:** Cryptographic session signatures are verified
+  synchronously in 0.1ms at the edge, skipping remote auth round-trips for authenticated
+  administrators while denying unauthorized requests with immediate 401 redirects.
+- **Locale Preference:** Middleware also reads the language cookie (`yth_lang`) and
+  defaults to Nepali (`ne`) on first visit; English (`en`) is applied only after explicit
+  user switch and persists for the browser session.
+
+## 3. Database & Row Level Security (RLS)
+
+- **PostgreSQL RLS:** Row Level Security is active across 100% of tables.
+- **Public Read Access:** Anonymous users can only `SELECT` published, non-deleted rows
+  associated with the owner's `profile_id` (articles, categories, media, etc.).
+- **Owner-Scoped Write:** Mutating operations require authenticated ownership checks
+  utilizing both `USING` and `WITH CHECK` clauses.
+- **Admin Isolation:** The `SUPABASE_SERVICE_ROLE_KEY` is restricted strictly to
+  server-side edge functions and is never exposed in client code or public environment
+  variables.
+
+## 4. Input Sanitization & Contact / Comment Protection
+
+- **Zod Schema Validation:** All contact submissions and public comments are parsed
+  through strict Zod schemas enforcing string length limits and email RFC compliance.
+- **XSS & Injection Mitigation:** Strips dangerous script tags (`<script>`) and malicious
+  HTML characters (`<`, `>`) from titles, bodies, and comments before persistence.
+- **Rate Limiting:** Protects `/api/contact` and comment endpoints with IP-based rate
+  limiting resolved via Cloudflare's `CF-Connecting-IP` header.
+- **No File Uploads on Public Forms:** Contact and comment forms reject file attachments,
+  eliminating malicious binary upload vectors.
+
+## 5. Storage Security & File Uploads
+
+- **Bucket Scoping:** Buckets (`avatars`, `covers`, `articles`, `media`, `gallery`) allow
+  public read access for displayable assets but require authenticated owner sessions
+  for write and delete operations.
+- **Upload Isolation:** Files are written to paths scoped by the owner user ID
+  (`/<user-id>/...`).
+- **Temporary Previews:** Client-side object URLs (`blob:`) are used strictly for
+  in-browser UI previews and are never persisted to the database.
+
+## 6. HTTP Security Headers & Content-Security-Policy (CSP)
+
+Enforced globally on every response:
+
+```http
+Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: https://oppwfvzjnrcmyuiaxrvk.supabase.co; font-src 'self' data:; connect-src 'self' https: wss: https://oppwfvzjnrcmyuiaxrvk.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+Cross-Origin-Opener-Policy: same-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=(), browsing-topics=()
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+```
+
+## 7. Incident Response & Monitoring
+
+- Monitor failed login attempts and lockout events in `login_attempts`.
+- Cloudflare Web Application Firewall (WAF) and DDoS protection active at the DNS layer.
+- Resend audit logs provide real-time delivery status for all outgoing inquiries.

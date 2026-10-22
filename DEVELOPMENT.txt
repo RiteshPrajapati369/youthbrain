@@ -1,0 +1,110 @@
+# Development
+
+This document provides local development instructions and operational workflows
+for the YouTh Brain News portal.
+
+## Prerequisites
+
+- Node.js v18+ (LTS)
+- npm v9+
+- Supabase project
+- Wrangler v4+
+
+## Local Installation
+
+```bash
+git clone https://github.com/RiteshPrajapati369/youth-brain-news.git
+cd youth-brain-news
+npm install
+```
+
+## Environment Setup
+
+Create `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://oppwfvzjnrcmyuiaxrvk.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_PORTFOLIO_PROFILE_ID=
+NEXT_PUBLIC_DEFAULT_LOCALE=ne
+
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+RESEND_API_KEY=your-resend-api-key
+OWNER_EMAIL=panditritesh005@gmail.com
+EMAIL_FROM=YouTh Brain News <onboarding@resend.dev>
+```
+
+## Running Locally
+
+```bash
+npm run dev
+npx tsc --noEmit
+npm run lint
+npm run build
+npx opennextjs-cloudflare build
+npm run preview
+```
+
+## Design System & Color Tokens
+
+### Light Mode (default)
+| Token     | Value     | Role                  |
+|-----------|-----------|-----------------------|
+| bg-primary| `#F8F7F4` | Main background       |
+| bg-soft   | `#E4F1FF` | Soft accent panels    |
+| surface   | `#ECEBF0` | Cards / surfaces      |
+| surface-2 | `#EAEDEE` | Secondary surfaces    |
+| text-1    | `#0D0C22` | Primary text          |
+| text-2    | `#524B63` | Secondary text        |
+| text-3    | `#6E6D7A` | Muted text            |
+| accent    | `#235DBC` | Primary blue (links, CTAs) |
+| accent-2  | `#EA4C89` | Highlight / category  |
+| accent-3  | `#4DAA57` | Success / positive    |
+| border    | `#E7E7E9` | Borders               |
+| white     | `#FFFFFF` | Pure white            |
+
+### Dark Mode
+| Token     | Value     | Role                  |
+|-----------|-----------|-----------------------|
+| bg-primary| `#0D0C22` | Main background       |
+| bg-soft   | `#1A1A2E` | Soft panels           |
+| surface   | `#1E1D2F` | Cards                 |
+| surface-2 | `#2A293A` | Secondary surfaces    |
+| text-1    | `#FFFFFF` | Primary text          |
+| text-2    | `#E4F1FF` | Secondary text        |
+| text-3    | `#9E9EA7` | Muted text            |
+| accent    | `#235DBC` | Primary blue          |
+| accent-2  | `#EA4C89` | Highlight             |
+| accent-3  | `#4DAA57` | Success               |
+| border    | `#2F2E3E` | Borders               |
+
+Typography: Inter / Noto Sans Devanagari (for Nepali)  
+Icons: Lucide React
+
+## CMS Module Structure
+
+1. **Overview** – Metrics, latest articles, MFA status.
+2. **Articles** – Multilingual editor, cover upload, publish / draft / breaking flag.
+3. **Categories** – Create / reorder / color-code categories (ne + en names).
+4. **Media Library** – Upload, organize, reuse images across articles.
+5. **Homepage** – Configure featured slots, ticker, section order.
+6. **Messages** – Contact inbox.
+7. **Profile** – Branding, about text, social links.
+8. **Security** – Password, MFA, login attempt logs (10-minute lockout).
+
+## Language Behavior
+
+- First visit → Nepali (`ne`).
+- User switches language → cookie `yth_lang` set for the browser session only.
+- Closing the tab/browser clears the preference → next visit returns to Nepali.
+
+## Logo Usage
+
+The official YouTh Brain News logo (`logo.jpg`) must be used in:
+- Navbar (desktop & mobile)
+- Favicon & app icons
+- Login / MFA screens
+- Email templates (Resend)
+- JSON-LD schema image
+- Open Graph / social share images
