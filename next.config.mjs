@@ -10,7 +10,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'oppwfvzjnrcmyuiaxrvk.supabase.co',
+        hostname: '*.supabase.co',
         port: '',
         pathname: '/**',
       },
@@ -29,7 +29,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: https://oppwfvzjnrcmyuiaxrvk.supabase.co; font-src 'self' data:; connect-src 'self' https: wss: https://oppwfvzjnrcmyuiaxrvk.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';",
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: https://*.supabase.co; font-src 'self' data:; connect-src 'self' https: wss: https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';",
           },
           {
             key: 'X-Frame-Options',
