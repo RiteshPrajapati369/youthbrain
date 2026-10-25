@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "youth-brain-news",
+  "account_id": "43aae1b35d40cc95c9f113ad6c5b2567",
   "main": ".open-next/worker.js",
   "compatibility_date": "2024-09-23",
   "compatibility_flags": ["nodejs_compat"],
@@ -8,14 +9,5 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
-  "routes": [
-    {
-      "pattern": "youthbrain.com.np",
-      "custom_domain": true
-    },
-    {
-      "pattern": "www.youthbrain.com.np",
-      "custom_domain": true
-    }
-  ]
+  "workers_dev": true
 }
