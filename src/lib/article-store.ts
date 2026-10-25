@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import bundledArticles from '@/data/articles.json';
 import type { Article, Category } from '@/types';
 import { DEFAULT_PRIORITY_CATEGORIES } from './services';
 import { createAdminClient } from './supabase-admin';
@@ -10,30 +11,40 @@ const ARTICLES_FILE_PATH = path.join(process.cwd(), 'src', 'data', 'articles.jso
 let memoryArticles: Article[] | null = null;
 
 function loadLocalArticles(): Article[] {
-  if (memoryArticles) {
+  if (memoryArticles && memoryArticles.length > 0) {
     return memoryArticles;
   }
   try {
-    if (fs.existsSync(ARTICLES_FILE_PATH)) {
+    if (typeof fs !== 'undefined' && fs.existsSync && fs.existsSync(ARTICLES_FILE_PATH)) {
       const raw = fs.readFileSync(ARTICLES_FILE_PATH, 'utf-8');
       const parsed = JSON.parse(raw);
-      memoryArticles = parsed;
-      return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        memoryArticles = parsed;
+        return parsed;
+      }
     }
   } catch (err) {
-    console.warn('Could not read articles.json from disk, using fallback empty array:', err);
+    // Cloudflare edge runtime doesn't have local filesystem access
   }
-  return [];
+
+  // Edge and serverless runtime fallback: use bundled articles
+  const fallback: Article[] = Array.isArray(bundledArticles)
+    ? (JSON.parse(JSON.stringify(bundledArticles)) as Article[])
+    : [];
+  memoryArticles = fallback;
+  return fallback;
 }
 
 function saveLocalArticles(articles: Article[]) {
   memoryArticles = articles;
   try {
-    const dir = path.dirname(ARTICLES_FILE_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    if (typeof fs !== 'undefined' && fs.writeFileSync && fs.existsSync) {
+      const dir = path.dirname(ARTICLES_FILE_PATH);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(ARTICLES_FILE_PATH, JSON.stringify(articles, null, 2), 'utf-8');
     }
-    fs.writeFileSync(ARTICLES_FILE_PATH, JSON.stringify(articles, null, 2), 'utf-8');
   } catch (err) {
     console.warn('Could not persist articles.json to disk (memory cache updated):', err);
   }
@@ -245,4 +256,49 @@ export async function deleteStoreArticle(id: string): Promise<boolean> {
   const filtered = local.filter((a) => a.id !== id);
   saveLocalArticles(filtered);
   return true;
+}
+
+/**
+ * Restore default 30 bundled news articles into memory, local store, and Supabase
+ */
+export async function restoreDefaultArticles(): Promise<{ count: number; restored: Article[] }> {
+  const articlesToRestore: Article[] = Array.isArray(bundledArticles)
+    ? JSON.parse(JSON.stringify(bundledArticles))
+    : [];
+
+  // Reset memory articles
+  memoryArticles = articlesToRestore;
+
+  // Persist to local JSON file if filesystem is available
+  try {
+    saveLocalArticles(articlesToRestore);
+  } catch (err) {
+    console.warn('Could not write restored articles to disk:', err);
+  }
+
+  // If Supabase is available, upsert articles
+  try {
+    const supabase = createAdminClient();
+    if (supabase) {
+      for (const art of articlesToRestore) {
+        const { category, ...cleanArt } = art as any;
+        await supabase
+          .from('articles')
+          .upsert(
+            {
+              ...cleanArt,
+              deleted_at: null,
+            },
+            { onConflict: 'id' }
+          );
+      }
+    }
+  } catch {
+    // Supabase optional / offline fallback
+  }
+
+  return {
+    count: articlesToRestore.length,
+    restored: articlesToRestore.map(attachCategory),
+  };
 }

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import bundledConfig from '@/data/site-config.json';
 import type { Profile, SocialLink } from '@/types';
 import { createAdminClient } from './supabase-admin';
 
@@ -16,14 +17,21 @@ function loadLocalConfig(): SiteConfig {
   if (memoryConfig) return memoryConfig;
 
   try {
-    if (fs.existsSync(CONFIG_FILE_PATH)) {
+    if (typeof fs !== 'undefined' && fs.existsSync && fs.existsSync(CONFIG_FILE_PATH)) {
       const raw = fs.readFileSync(CONFIG_FILE_PATH, 'utf-8');
       const parsed = JSON.parse(raw);
-      memoryConfig = parsed;
-      return parsed;
+      if (parsed?.profile) {
+        memoryConfig = parsed;
+        return parsed;
+      }
     }
   } catch (err) {
-    console.warn('Could not read site-config.json, using fallback:', err);
+    // Cloudflare edge runtime
+  }
+
+  if (bundledConfig && (bundledConfig as any).profile) {
+    memoryConfig = bundledConfig as any;
+    return memoryConfig as SiteConfig;
   }
 
   const fallback: SiteConfig = {
@@ -93,11 +101,13 @@ function loadLocalConfig(): SiteConfig {
 function saveLocalConfig(config: SiteConfig) {
   memoryConfig = config;
   try {
-    const dir = path.dirname(CONFIG_FILE_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    if (typeof fs !== 'undefined' && fs.writeFileSync && fs.existsSync) {
+      const dir = path.dirname(CONFIG_FILE_PATH);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(config, null, 2), 'utf-8');
     }
-    fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(config, null, 2), 'utf-8');
   } catch (err) {
     console.warn('Could not write site-config.json:', err);
   }

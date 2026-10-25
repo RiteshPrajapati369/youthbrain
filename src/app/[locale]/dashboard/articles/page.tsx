@@ -41,6 +41,7 @@ export default function DashboardArticlesPage({ params: { locale } }: ArticlesPa
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -361,6 +362,36 @@ export default function DashboardArticlesPage({ params: { locale } }: ArticlesPa
     }
   };
 
+  const handleRestoreDefaults = async () => {
+    const confirmMsg = isNe
+      ? 'के तपाईं प्रारम्भिक ३० समाचारहरू रिस्टोर गर्न चाहनुहुन्छ? यसले सबै सुरुवाती समाचारहरू फिर्ता ल्याउनेछ।'
+      : 'Are you sure you want to restore the 30 default news articles? This will restore all starter news.';
+
+    if (!confirm(confirmMsg)) return;
+
+    setRestoring(true);
+    try {
+      const res = await fetch(`/${locale}/api/dashboard/articles?action=restore`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(
+          isNe
+            ? `सफलतापूर्वक ${data.count || 30} समाचार रिस्टोर गरियो।`
+            : `Successfully restored ${data.count || 30} news articles.`
+        );
+        loadData();
+      } else {
+        toast.error(data.error || 'Failed to restore default articles');
+      }
+    } catch {
+      toast.error('Network error during restore');
+    } finally {
+      setRestoring(false);
+    }
+  };
+
   // Filter articles
   const filteredArticles = articles.filter((art) => {
     const title = (isNe ? art.title_ne : art.title_en).toLowerCase();
@@ -403,14 +434,27 @@ export default function DashboardArticlesPage({ params: { locale } }: ArticlesPa
           </select>
         </div>
 
-        <button
-          type="button"
-          onClick={openCreateModal}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-accent hover:bg-accent/90 text-white font-bold text-xs sm:text-sm shadow-md transition-all flex-shrink-0 cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{isNe ? 'नयाँ समाचार सिर्जना गर्नुहोस्' : 'Write New Article'}</span>
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+          <button
+            type="button"
+            onClick={handleRestoreDefaults}
+            disabled={restoring}
+            className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-border bg-surface hover:bg-surface-2 text-text-1 font-semibold text-xs sm:text-sm shadow-sm transition-all flex-shrink-0 cursor-pointer disabled:opacity-50"
+            title={isNe ? 'प्रारम्भिक ३० समाचारहरू रिस्टोर गर्नुहोस्' : 'Restore 30 Default News Articles'}
+          >
+            <RefreshCw className={`w-4 h-4 text-accent ${restoring ? 'animate-spin' : ''}`} />
+            <span>{isNe ? 'प्रारम्भिक समाचार रिस्टोर (३०)' : 'Restore Default News (30)'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={openCreateModal}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-accent hover:bg-accent/90 text-white font-bold text-xs sm:text-sm shadow-md transition-all flex-shrink-0 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{isNe ? 'नयाँ समाचार सिर्जना गर्नुहोस्' : 'Write New Article'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Articles Table */}

@@ -6,6 +6,7 @@ import {
   createStoreArticle,
   updateStoreArticle,
   deleteStoreArticle,
+  restoreDefaultArticles,
 } from '@/lib/article-store';
 
 // Helper to check dashboard authorization
@@ -37,7 +38,30 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get('action');
+
+    // Handle restore action via query param ?action=restore
+    if (action === 'restore') {
+      const result = await restoreDefaultArticles();
+      return NextResponse.json({
+        success: true,
+        count: result.count,
+        articles: result.restored,
+      });
+    }
+
+    const body = await request.json().catch(() => ({}));
+
+    // Handle restore action via body { action: 'restore' }
+    if (body.action === 'restore') {
+      const result = await restoreDefaultArticles();
+      return NextResponse.json({
+        success: true,
+        count: result.count,
+        articles: result.restored,
+      });
+    }
 
     // Auto-generate slug if not provided
     const slug = body.slug
