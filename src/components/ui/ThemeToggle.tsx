@@ -32,20 +32,19 @@ export function ThemeToggle() {
     }
   };
 
-  if (!mounted) {
-    return (
-      <div className="w-9 h-9 rounded-full bg-surface border border-border flex items-center justify-center opacity-60" />
-    );
-  }
-
   return (
     <button
       onClick={toggleTheme}
       type="button"
+      suppressHydrationWarning
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       className="w-9 h-9 rounded-full bg-surface border border-border flex items-center justify-center text-text-1 hover:text-accent transition-colors shadow-sm"
     >
-      {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-text-2" />}
+      {mounted ? (
+        isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-text-2" />
+      ) : (
+        <span className="w-4 h-4 opacity-0" />
+      )}
     </button>
   );
 }

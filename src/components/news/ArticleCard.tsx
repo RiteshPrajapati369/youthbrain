@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Clock, Eye, Sparkles } from 'lucide-react';
+import { formatArticleDate } from '@/lib/date-utils';
 import type { Article } from '@/types';
 
 interface ArticleCardProps {
@@ -19,14 +20,7 @@ export function ArticleCard({ article, locale, variant = 'standard' }: ArticleCa
   const categoryName = isNe ? article.category?.name_ne : article.category?.name_en;
   const categoryColor = article.category?.color || '#235DBC';
 
-  const formattedDate = article.published_at
-    ? new Date(article.published_at).toLocaleDateString(isNe ? 'ne-NP' : 'en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })
-    : '';
-
+  const formattedDate = formatArticleDate(article.published_at, locale);
   const imageUrl = article.cover_image_url || '/logo.jpg';
 
   if (variant === 'featured') {
@@ -70,7 +64,7 @@ export function ArticleCard({ article, locale, variant = 'standard' }: ArticleCa
               )}
               <div className="mt-4 flex items-center gap-4 text-xs text-gray-300">
                 {formattedDate && (
-                  <span className="flex items-center gap-1">
+                  <span suppressHydrationWarning className="flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" />
                     {formattedDate}
                   </span>
@@ -102,7 +96,7 @@ export function ArticleCard({ article, locale, variant = 'standard' }: ArticleCa
           {categoryName && (
             <span
               style={{ color: categoryColor }}
-              className="text-[11px] font-bold uppercase tracking-wider block mb-1"
+              className="font-bold text-[11px] uppercase tracking-wider block mb-1"
             >
               {categoryName}
             </span>
@@ -113,7 +107,7 @@ export function ArticleCard({ article, locale, variant = 'standard' }: ArticleCa
             </h3>
           </Link>
           <div className="mt-2 flex items-center gap-3 text-[11px] text-text-3">
-            {formattedDate && <span>{formattedDate}</span>}
+            {formattedDate && <span suppressHydrationWarning>{formattedDate}</span>}
             <span>•</span>
             <span>{article.view_count || 0} {isNe ? 'हेराइ' : 'views'}</span>
           </div>
@@ -132,23 +126,18 @@ export function ArticleCard({ article, locale, variant = 'standard' }: ArticleCa
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
-          {article.is_breaking && (
-            <span className="absolute top-2 left-2 rounded-full bg-accent-2 px-2.5 py-0.5 text-[10px] font-bold text-white shadow">
-              {isNe ? 'ब्रेकिङ' : 'BREAKING'}
-            </span>
-          )}
         </div>
         <div className="md:col-span-7 flex flex-col justify-center">
           {categoryName && (
             <span
               style={{ color: categoryColor }}
-              className="text-xs font-bold uppercase tracking-wider mb-1.5"
+              className="font-bold text-xs uppercase tracking-wider mb-1"
             >
               {categoryName}
             </span>
           )}
           <Link href={`/${locale}/news/${article.slug}`}>
-            <h3 className="text-lg font-bold text-text-1 group-hover:text-accent transition-colors line-clamp-2 leading-snug">
+            <h3 className="text-base sm:text-xl font-bold text-text-1 group-hover:text-accent transition-colors line-clamp-2 leading-snug">
               {title}
             </h3>
           </Link>
@@ -158,7 +147,7 @@ export function ArticleCard({ article, locale, variant = 'standard' }: ArticleCa
             </p>
           )}
           <div className="mt-3 flex items-center gap-4 text-xs text-text-3">
-            {formattedDate && <span>{formattedDate}</span>}
+            {formattedDate && <span suppressHydrationWarning>{formattedDate}</span>}
             <span>•</span>
             <span>{article.view_count || 0} {isNe ? 'हेराइ' : 'views'}</span>
           </div>
@@ -195,7 +184,7 @@ export function ArticleCard({ article, locale, variant = 'standard' }: ArticleCa
           ) : (
             <span />
           )}
-          {formattedDate && <span className="text-text-3">{formattedDate}</span>}
+          {formattedDate && <span suppressHydrationWarning className="text-text-3">{formattedDate}</span>}
         </div>
         <Link href={`/${locale}/news/${article.slug}`}>
           <h3 className="text-base sm:text-lg font-bold text-text-1 group-hover:text-accent transition-colors line-clamp-2 leading-snug">
@@ -203,17 +192,17 @@ export function ArticleCard({ article, locale, variant = 'standard' }: ArticleCa
           </h3>
         </Link>
         {summary && (
-          <p className="mt-2 flex-1 text-xs sm:text-sm text-text-2 line-clamp-2 leading-relaxed">
+          <p className="mt-2 text-sm text-text-2 line-clamp-3 leading-relaxed">
             {summary}
           </p>
         )}
-        <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs text-text-3">
-          <span className="flex items-center gap-1">
+        <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-between text-xs text-text-3">
+          <span className="flex items-center gap-1 font-medium">
             <Eye className="w-3.5 h-3.5" />
-            {article.view_count || 0} {isNe ? 'हेराइ' : 'views'}
+            {article.view_count || 0} {isNe ? 'पटक पढिएको' : 'views'}
           </span>
-          <span className="font-medium text-accent group-hover:underline">
-            {isNe ? 'पुरा पढ्नुहोस् →' : 'Read more →'}
+          <span className="font-semibold text-accent hover:underline">
+            {isNe ? 'पूरा पढ्नुहोस् →' : 'Read more →'}
           </span>
         </div>
       </div>

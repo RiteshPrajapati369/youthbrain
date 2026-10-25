@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { Menu, X, Clock, Shield } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
+import { formatHeaderDate } from '@/lib/date-utils';
 import type { Category } from '@/types';
 
 interface NavbarProps {
@@ -135,12 +136,7 @@ export function Navbar({ locale, categories = [] }: NavbarProps) {
     { href: `/${locale}/contact`, label: isNe ? 'सम्पर्क' : 'Contact' },
   ];
 
-  const currentDateFormatted = new Date().toLocaleDateString(isNe ? 'ne-NP' : 'en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const currentDateFormatted = formatHeaderDate(new Date(), locale);
 
   const totalHeaderHeight = topBarHeight + navBarHeight;
 
@@ -175,12 +171,12 @@ export function Navbar({ locale, categories = [] }: NavbarProps) {
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Left side: Date and Time */}
             <div className="w-full md:w-auto flex items-center justify-between md:flex-col md:items-start gap-1.5 order-2 md:order-1 md:flex-1">
-              <span className="text-xs sm:text-sm font-semibold text-text-2 tracking-tight">
+              <span suppressHydrationWarning className="text-xs sm:text-sm font-semibold text-text-2 tracking-tight">
                 {currentDateFormatted}
               </span>
               <div className="inline-flex items-center gap-1.5 font-mono text-xs sm:text-sm font-bold text-accent bg-bg-soft px-3 py-1 rounded-full border border-border/80 shadow-xs">
                 <Clock className="w-3.5 h-3.5 text-accent animate-pulse" />
-                <span>{timeString || '--:--:--'}</span>
+                <span suppressHydrationWarning>{timeString || '--:--:--'}</span>
               </div>
             </div>
 
@@ -260,8 +256,8 @@ export function Navbar({ locale, categories = [] }: NavbarProps) {
           {mobileMenuOpen && (
             <div className="md:hidden border-b border-border bg-surface p-4 transition-all animate-in slide-in-from-top-2 shadow-lg">
               <div className="pb-2 mb-2 border-b border-border text-xs text-text-3 font-semibold flex items-center justify-between">
-                <span className="font-medium text-text-2">{currentDateFormatted}</span>
-                <span className="font-mono text-accent font-bold">{timeString}</span>
+                <span suppressHydrationWarning className="font-medium text-text-2">{currentDateFormatted}</span>
+                <span suppressHydrationWarning className="font-mono text-accent font-bold">{timeString}</span>
               </div>
 
               <nav className="flex flex-col space-y-1">

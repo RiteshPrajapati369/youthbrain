@@ -152,7 +152,7 @@ export default function DashboardMessagesPage({ params: { locale } }: MessagesPa
                     </p>
 
                     <div className="mt-2 text-[10px] text-text-3 flex items-center justify-between">
-                      <span>{new Date(msg.created_at).toLocaleDateString()}</span>
+                      <span suppressHydrationWarning>{new Date(msg.created_at).toLocaleDateString()}</span>
                       <span className="font-mono">{msg.ip_address}</span>
                     </div>
                   </div>

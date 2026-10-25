@@ -11,6 +11,7 @@ import {
   getSocialLinks,
   incrementViewCount,
 } from '@/lib/services';
+import { formatHeaderDate } from '@/lib/date-utils';
 import { Navbar } from '@/components/sections/Navbar';
 import { Footer } from '@/components/sections/Footer';
 import { MarkdownRenderer } from '@/components/news/MarkdownRenderer';
@@ -90,12 +91,7 @@ export default async function ArticleDetailPage({
   const categoryColor = article.category?.color || '#235DBC';
 
   const formattedDate = article.published_at
-    ? new Date(article.published_at).toLocaleDateString(isNe ? 'ne-NP' : 'en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
+    ? formatHeaderDate(article.published_at, locale)
     : '';
 
   return (
@@ -148,7 +144,7 @@ export default async function ArticleDetailPage({
               </span>
             </div>
             {formattedDate && (
-              <span className="flex items-center gap-1">
+              <span suppressHydrationWarning className="flex items-center gap-1">
                 <Clock className="w-4 h-4 text-text-3" />
                 {formattedDate}
               </span>
