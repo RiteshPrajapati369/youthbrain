@@ -93,6 +93,7 @@ export default async function ArticleDetailPage({
   const formattedDate = article.published_at
     ? formatHeaderDate(article.published_at, locale)
     : '';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://youthbrain.com.np';
 
   return (
     <div className="flex flex-col min-h-screen">
