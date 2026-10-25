@@ -2,7 +2,7 @@
 
 This document outlines the security controls, authentication safeguards, data
 protection mechanisms, and defensive engineering practices implemented across the
-YouTh Brain News portal (https://youthbrainnews.com.np).
+YouTh Brain News portal (https://youthbrain.com.np).
 
 ## 1. Authentication & Identity Protection
 

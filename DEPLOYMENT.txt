@@ -1,7 +1,7 @@
 # Deployment
 
 This document describes the production deployment pipeline for the YouTh Brain News
-portal (https://youthbrainnews.com.np).
+portal (https://youthbrain.com.np).
 
 ## Production Platform: Cloudflare Workers
 
@@ -15,7 +15,7 @@ Middleware, Server Actions) via the `nodejs_compat` compatibility flag.
 - **Next.js Compilation:** `npm run build`
 - **OpenNext Transformation:** `npx opennextjs-cloudflare build`
 - **Cloudflare Edge Deployment:** `npx wrangler deploy`
-- **Custom Domain Binding:** `wrangler.jsonc` binds `youthbrainnews.com.np`
+- **Custom Domain Binding:** `wrangler.jsonc` binds `youthbrain.com.np`
 
 ### Build & Deploy Commands
 
@@ -36,7 +36,7 @@ npm run preview
 | RESEND_API_KEY                   | Server Only   | **SECRET**  | Contact email delivery                       |
 | OWNER_EMAIL                      | Server Only   | Internal    | panditritesh005@gmail.com                    |
 | EMAIL_FROM                       | Server Only   | Internal    | Verified sender                              |
-| NEXT_PUBLIC_SITE_URL             | Client/Server | Public      | https://youthbrainnews.com.np                |
+| NEXT_PUBLIC_SITE_URL             | Client/Server | Public      | https://youthbrain.com.np                    |
 | NEXT_PUBLIC_PORTFOLIO_PROFILE_ID | Client/Server | Public      | Owner profile UUID                           |
 | NEXT_PUBLIC_DEFAULT_LOCALE       | Client/Server | Public      | ne                                           |
 
@@ -63,7 +63,11 @@ npx wrangler secret list
   },
   "routes": [
     {
-      "pattern": "youthbrainnews.com.np",
+      "pattern": "youthbrain.com.np",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.youthbrain.com.np",
       "custom_domain": true
     }
   ]

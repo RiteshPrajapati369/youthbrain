@@ -1,7 +1,7 @@
 # Architecture
 
 This document describes the comprehensive architecture of the YouTh Brain News
-portal (https://youthbrainnews.com.np). It is built with Next.js 14 (App Router),
+portal (https://youthbrain.com.np). It is built with Next.js 14 (App Router),
 TypeScript, Tailwind CSS, next-intl (bilingual Nepali/English), Supabase
 (PostgreSQL, Storage, Row Level Security), and deployed globally on Cloudflare
 Workers using OpenNext.

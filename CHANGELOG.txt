@@ -25,7 +25,7 @@ YouTh Brain News portal are documented in this file.
 - Dynamic sitemap with locale-aware article URLs.
 - robots.txt shielding /dashboard, /auth, /api.
 - NewsArticle + NewsMediaOrganization JSON-LD.
-- Custom domain Cloudflare trigger for youthbrainnews.com.np.
+- Custom domain Cloudflare trigger for youthbrain.com.np.
 
 ### Performance & Auth
 - Edge authentication fast-path (0.1 ms HMAC verification).
