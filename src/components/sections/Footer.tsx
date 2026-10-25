@@ -195,8 +195,8 @@ export function Footer({ locale, socialLinks = [], profile }: FooterProps) {
         <div className="pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between text-xs text-text-3 gap-3">
           <p>
             {isNe
-              ? '© २०२६ YouTh Brain News (youthbrainnews.com.np)। सर्वाधिकार सुरक्षित।'
-              : '© 2026 YouTh Brain News (youthbrainnews.com.np). All rights reserved.'}
+              ? '© २०२६ YouTh Brain News (youthbrain.com.np)। सर्वाधिकार सुरक्षित।'
+              : '© 2026 YouTh Brain News (youthbrain.com.np). All rights reserved.'}
           </p>
           <div className="flex items-center space-x-4">
             <span className="text-accent font-medium">

@@ -36,7 +36,7 @@ export async function generateMetadata({
   const description = isNe
     ? article.summary_ne || article.title_ne
     : article.summary_en || article.title_en;
-  const siteUrl = 'https://youthbrainnews.com.np';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://youthbrain.com.np';
   const imageUrl = article.cover_image_url || '/logo.jpg';
 
   return {
@@ -158,7 +158,7 @@ export default async function ArticleDetailPage({
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold">{isNe ? 'सेयर:' : 'Share:'}</span>
             <a
-              href={`https://www.facebook.com/sharer/sharer.php?u=https://youthbrainnews.com.np/${locale}/news/${slug}`}
+              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`${siteUrl}/${locale}/news/${slug}`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="p-1.5 rounded-full bg-surface hover:text-accent hover:bg-surface-2 transition-colors border border-border"

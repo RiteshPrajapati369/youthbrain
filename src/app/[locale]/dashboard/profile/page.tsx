@@ -41,7 +41,7 @@ export default function DashboardProfilePage({ params: { locale } }: ProfilePage
       'YouTh Brain News is a premier independent digital news portal committed to impartial, verified, and timely news reporting.',
     avatar_url: '/logo.jpg',
     email: 'panditritesh005@gmail.com',
-    secondary_email: 'info@youthbrainnews.com.np',
+    secondary_email: 'info@youthbrain.com.np',
     phone: '+977-9800000000',
     location: 'Hetauda, Nepal',
     status: 'active',
@@ -222,7 +222,7 @@ export default function DashboardProfilePage({ params: { locale } }: ProfilePage
                 type="email"
                 value={profile.secondary_email || ''}
                 onChange={(e) => setProfile({ ...profile, secondary_email: e.target.value })}
-                placeholder="info@youthbrainnews.com.np"
+                placeholder="info@youthbrain.com.np"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-bg-primary text-text-1 text-sm font-semibold focus:border-accent focus:outline-none transition-colors"
               />
               <p className="text-[11px] text-text-3 mt-1">

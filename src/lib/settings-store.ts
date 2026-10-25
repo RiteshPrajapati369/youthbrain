@@ -35,7 +35,7 @@ function loadLocalConfig(): SiteConfig {
       about_description: 'YouTh Brain News is a premier independent digital news portal committed to impartial, verified, and timely news reporting.',
       avatar_url: '/logo.jpg',
       email: 'panditritesh005@gmail.com',
-      secondary_email: 'info@youthbrainnews.com.np',
+      secondary_email: 'info@youthbrain.com.np',
       phone: '+977-9800000000',
       location: 'Hetauda, Nepal',
       status: 'active',

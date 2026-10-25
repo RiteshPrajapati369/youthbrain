@@ -8,9 +8,9 @@ interface OrganizationJsonLdProps {
 }
 
 export function OrganizationJsonLd({
-  siteUrl = 'https://youthbrainnews.com.np',
+  siteUrl = 'https://youthbrain.com.np',
   name = 'YouTh Brain News',
-  logoUrl = 'https://youthbrainnews.com.np/logo.jpg',
+  logoUrl = 'https://youthbrain.com.np/logo.jpg',
 }: OrganizationJsonLdProps) {
   const schema = {
     '@context': 'https://schema.org',
@@ -55,7 +55,7 @@ interface ArticleJsonLdProps {
 export function NewsArticleJsonLd({
   article,
   locale,
-  siteUrl = 'https://youthbrainnews.com.np',
+  siteUrl = 'https://youthbrain.com.np',
 }: ArticleJsonLdProps) {
   const isNe = locale === 'ne';
   const title = isNe ? article.title_ne : article.title_en;

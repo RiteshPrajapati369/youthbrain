@@ -15,7 +15,7 @@ export async function generateMetadata({
   const tagline = isNe
     ? 'सत्य, तथ्य र निष्पक्ष समाचारको विश्वसनीय स्रोत'
     : 'Your Trusted Source for Truth, Facts and Impartial News';
-  const siteUrl = 'https://youthbrainnews.com.np';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://youthbrain.com.np';
 
   return {
     title: {

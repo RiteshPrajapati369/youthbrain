@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { getArticles, getCategories } from '@/lib/services';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = 'https://youthbrainnews.com.np';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://youthbrain.com.np';
   const locales = ['ne', 'en'];
 
   const [articles, categories] = await Promise.all([

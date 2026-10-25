@@ -34,7 +34,7 @@ export default async function ContactPage({ params: { locale } }: ContactPagePro
 
   const location = profile?.location || (isNe ? 'हेटौँडा, नेपाल' : 'Hetauda, Nepal');
   const primaryEmail = profile?.email || 'panditritesh005@gmail.com';
-  const secondaryEmail = (profile as any)?.secondary_email || 'info@youthbrainnews.com.np';
+  const secondaryEmail = (profile as any)?.secondary_email || 'info@youthbrain.com.np';
   const phone = profile?.phone || '+977-9800000000';
 
   return (

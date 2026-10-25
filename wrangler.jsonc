@@ -10,7 +10,11 @@
   },
   "routes": [
     {
-      "pattern": "youthbrainnews.com.np",
+      "pattern": "youthbrain.com.np",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.youthbrain.com.np",
       "custom_domain": true
     }
   ]
