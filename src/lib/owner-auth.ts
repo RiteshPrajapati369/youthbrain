@@ -2,11 +2,28 @@ import { createAdminClient } from './supabase-admin';
 import type { OwnerSessionPayload } from '@/types';
 
 export const OWNER_EMAIL = (process.env.OWNER_EMAIL || 'panditritesh005@gmail.com').toLowerCase().trim();
+export const DEFAULT_OWNER_PASSWORD = process.env.OWNER_PASSWORD || 'YouthBrain@2026#Admin';
 export const SESSION_COOKIE_NAME = 'ythbrain_owner_session';
 export const MFA_PENDING_COOKIE_NAME = 'ythbrain_mfa_pending';
 export const SESSION_EXPIRY_DAYS = 7;
 export const LOCKOUT_THRESHOLD = 3;
 export const LOCKOUT_DURATION_SECONDS = 600; // 10 minutes (strict)
+
+// Constant-time string comparison to prevent timing attacks
+export function constantTimeCompare(a: string, b: string): boolean {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const enc = new TextEncoder();
+  const aBuf = enc.encode(a);
+  const bBuf = enc.encode(b);
+  const maxLen = Math.max(aBuf.length, bBuf.length);
+  let mismatch = aBuf.length === bBuf.length ? 0 : 1;
+  for (let i = 0; i < maxLen; i++) {
+    const aByte = i < aBuf.length ? aBuf[i] : 0;
+    const bByte = i < bBuf.length ? bBuf[i] : 0;
+    mismatch |= aByte ^ bByte;
+  }
+  return mismatch === 0;
+}
 
 const SECRET_KEY_STR = process.env.OWNER_SESSION_SECRET || 'youthbrain_secure_session_secret_key_32chars_long!';
 
@@ -276,12 +293,14 @@ export async function verifyTotpCode(secretBase32: string, token: string): Promi
   const cleanToken = token.trim();
   if (!/^\d{6}$/.test(cleanToken)) return false;
 
+  let matched = false;
   // Window of +/- 1 time step (90 seconds total) for clock drift tolerance
+  // Constant execution time across offsets to avoid timing analysis
   for (let offset = -1; offset <= 1; offset++) {
     const expected = await generateTotpCode(secretBase32, offset);
-    if (expected === cleanToken) {
-      return true;
+    if (constantTimeCompare(expected, cleanToken)) {
+      matched = true;
     }
   }
-  return false;
+  return matched;
 }

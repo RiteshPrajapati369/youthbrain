@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Shield, Lock, Mail, AlertTriangle, ArrowRight, Clock } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Lock, Mail, AlertTriangle, ArrowRight, Clock } from 'lucide-react';
+import { z } from 'zod';
 import { toast } from 'sonner';
 import { loginAction } from '@/lib/auth-actions';
 
@@ -14,8 +15,36 @@ interface LoginPageProps {
   };
 }
 
-export default function LoginPage({ params: { locale } }: LoginPageProps) {
+// Client-side Zod validation
+const clientLoginSchema = z.object({
+  email: z
+    .string()
+    .min(5, 'इमेल ठेगाना अति छोटो भयो।')
+    .max(100, 'इमेल ठेगाना धेरै लामो भयो।')
+    .email('कृपया मान्य इमेल प्रविष्ट गर्नुहोस्।'),
+  password: z
+    .string()
+    .min(8, 'पासवर्ड कम्तिमा ८ अक्षरको हुनुपर्दछ।')
+    .max(128, 'पासवर्ड धेरै लामो भयो।'),
+});
+
+// Safe redirect validator (Prevents Open Redirect vulnerabilities)
+function getSafeRedirectUrl(target: string | null, locale: string): string {
+  if (!target || typeof target !== 'string') return `/${locale}/dashboard`;
+  // Block protocol-relative URLs (//evil.com), full URLs (https://), or backslash tricks
+  if (target.includes('://') || target.startsWith('//') || target.includes('\\')) {
+    return `/${locale}/dashboard`;
+  }
+  // Only allow relative internal paths within locale dashboard or home
+  if (target.startsWith(`/${locale}/dashboard`) || target === `/${locale}`) {
+    return target;
+  }
+  return `/${locale}/dashboard`;
+}
+
+function LoginFormContent({ locale }: { locale: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isNe = locale === 'ne';
 
   const [email, setEmail] = useState('panditritesh005@gmail.com');
@@ -44,11 +73,21 @@ export default function LoginPage({ params: { locale } }: LoginPageProps) {
     e.preventDefault();
     if (lockoutSeconds > 0) return;
 
-    setLoading(true);
     setErrorMsg(null);
 
+    // Client-side Zod schema validation
+    const clientValidation = clientLoginSchema.safeParse({ email, password });
+    if (!clientValidation.success) {
+      const err = clientValidation.error.issues[0]?.message || 'कृपया मान्य विवरण भर्नुहोस्।';
+      setErrorMsg(err);
+      toast.error(err);
+      return;
+    }
+
+    setLoading(true);
+
     const formData = new FormData();
-    formData.append('email', email);
+    formData.append('email', email.trim().toLowerCase());
     formData.append('password', password);
 
     try {
@@ -71,13 +110,21 @@ export default function LoginPage({ params: { locale } }: LoginPageProps) {
 
       if (res?.requireMfa) {
         toast.success(
-          isNe ? 'पासवर्ड स्वीकृत भयो। कृपया MFA कोड प्रविष्ट गर्नुहोस्।' : 'Password verified. Please enter TOTP code.'
+          isNe
+            ? 'पासवर्ड स्वीकृत भयो। कृपया MFA कोड प्रविष्ट गर्नुहोस्।'
+            : 'Password verified. Please enter TOTP code.'
         );
-        router.push(`/${locale}/auth/mfa`);
+        const redirectParam = searchParams.get('redirect');
+        const safeTarget = getSafeRedirectUrl(redirectParam, locale);
+        router.push(`/${locale}/auth/mfa?redirect=${encodeURIComponent(safeTarget)}`);
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Authentication failed');
-      toast.error('Authentication error occurred');
+    } catch {
+      setErrorMsg(
+        isNe
+          ? 'प्रमाणीकरणमा समस्या आयो। कृपया पुन: प्रयास गर्नुहोस्।'
+          : 'Authentication error occurred.'
+      );
+      toast.error(isNe ? 'प्रमाणीकरण असफल भयो।' : 'Authentication failed.');
     } finally {
       setLoading(false);
     }
@@ -93,17 +140,22 @@ export default function LoginPage({ params: { locale } }: LoginPageProps) {
       <div className="absolute -bottom-32 -right-32 w-80 h-80 rounded-full bg-accent-2/10 blur-3xl" />
 
       <div className="w-full max-w-md bg-surface border border-border rounded-2xl shadow-xl p-8 relative z-10">
-        {/* Brand Logo & Header */}
-        <div className="text-center mb-8">
-          <Link href={`/${locale}`} className="inline-block group">
-            <div className="relative w-20 h-20 mx-auto rounded-full overflow-hidden border-2 border-accent shadow-md mb-4 group-hover:scale-105 transition-transform">
-              <Image src="/logo.jpg" alt="YouTh Brain News" fill className="object-cover" priority />
-            </div>
-          </Link>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-bold mb-2">
-            <Shield className="w-3.5 h-3.5" />
-            <span>{isNe ? 'सुरक्षित व्यवस्थापक पोर्टल' : 'Editorial CMS Gateway'}</span>
+        {/* Brand Logo perfectly centered horizontally at the top of the card */}
+        <div className="flex flex-col items-center justify-center text-center mb-8">
+          <div className="w-full flex justify-center items-center mb-5">
+            <Link href={`/${locale}`} className="group flex justify-center items-center">
+              <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-accent shadow-md group-hover:scale-105 transition-transform flex-shrink-0">
+                <Image
+                  src="/logo.jpg"
+                  alt="YouTh Brain News"
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            </Link>
           </div>
+
           <h1 className="text-2xl font-extrabold text-text-1">
             {isNe ? 'व्यवस्थापक लगइन' : 'Editor-in-Chief Sign In'}
           </h1>
@@ -138,7 +190,7 @@ export default function LoginPage({ params: { locale } }: LoginPageProps) {
         )}
 
         {/* Login Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
           <div>
             <label className="block text-xs font-bold text-text-1 uppercase tracking-wider mb-1.5">
               {isNe ? 'अधिकृत इमेल' : 'Owner Email'}
@@ -154,7 +206,9 @@ export default function LoginPage({ params: { locale } }: LoginPageProps) {
               />
             </div>
             <p className="text-[11px] text-text-3 mt-1">
-              {isNe ? 'यो प्रणाली panditritesh005@gmail.com का लागि मात्र सुरक्षित छ।' : 'Access locked exclusively to owner account.'}
+              {isNe
+                ? 'यो प्रणाली panditritesh005@gmail.com का लागि मात्र सुरक्षित छ।'
+                : 'Access locked exclusively to owner account.'}
             </p>
           </div>
 
@@ -171,6 +225,7 @@ export default function LoginPage({ params: { locale } }: LoginPageProps) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
+                maxLength={128}
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-bg-primary text-text-1 text-sm focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
               />
             </div>
@@ -184,7 +239,11 @@ export default function LoginPage({ params: { locale } }: LoginPageProps) {
             {loading ? (
               <span>{isNe ? 'प्रमाणीकरण गर्दै...' : 'Verifying...'}</span>
             ) : lockoutSeconds > 0 ? (
-              <span>{isNe ? `१० मिनेट लकआउट सक्रिय (${minutesRemaining}:${secondsRemaining < 10 ? '0' : ''}${secondsRemaining})` : `Locked (${minutesRemaining}:${secondsRemaining < 10 ? '0' : ''}${secondsRemaining})`}</span>
+              <span>
+                {isNe
+                  ? `१० मिनेट लकआउट सक्रिय (${minutesRemaining}:${secondsRemaining < 10 ? '0' : ''}${secondsRemaining})`
+                  : `Locked (${minutesRemaining}:${secondsRemaining < 10 ? '0' : ''}${secondsRemaining})`}
+              </span>
             ) : (
               <>
                 <span>{isNe ? 'पासवर्ड प्रमाणित गर्नुहोस्' : 'Verify Password'}</span>
@@ -204,5 +263,19 @@ export default function LoginPage({ params: { locale } }: LoginPageProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage({ params: { locale } }: LoginPageProps) {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen bg-bg-primary flex items-center justify-center text-text-3">
+          Loading...
+        </div>
+      }
+    >
+      <LoginFormContent locale={locale} />
+    </React.Suspense>
   );
 }

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { KeyRound, ShieldCheck, ArrowRight, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { verifyMfaAction } from '@/lib/auth-actions';
@@ -14,8 +14,20 @@ interface MfaPageProps {
   };
 }
 
-export default function MfaPage({ params: { locale } }: MfaPageProps) {
+function getSafeRedirectUrl(target: string | null, locale: string): string {
+  if (!target || typeof target !== 'string') return `/${locale}/dashboard`;
+  if (target.includes('://') || target.startsWith('//') || target.includes('\\')) {
+    return `/${locale}/dashboard`;
+  }
+  if (target.startsWith(`/${locale}/dashboard`) || target === `/${locale}`) {
+    return target;
+  }
+  return `/${locale}/dashboard`;
+}
+
+function MfaFormContent({ locale }: { locale: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isNe = locale === 'ne';
 
   const [code, setCode] = useState('');
@@ -24,7 +36,7 @@ export default function MfaPage({ params: { locale } }: MfaPageProps) {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (code.length !== 6) {
+    if (!/^\d{6}$/.test(code)) {
       toast.error(isNe ? 'कृपया ६ अंकको कोड प्रविष्ट गर्नुहोस्।' : 'Please enter the 6-digit code.');
       return;
     }
@@ -47,14 +59,17 @@ export default function MfaPage({ params: { locale } }: MfaPageProps) {
 
       if (res?.success) {
         toast.success(
-          isNe ? 'सुरक्षित लगइन सफल भयो! ड्यासबोर्डमा स्वागत छ।' : 'MFA Verified! Redirecting to CMS Dashboard...'
+          isNe
+            ? 'सुरक्षित लगइन सफल भयो! ड्यासबोर्डमा स्वागत छ।'
+            : 'MFA Verified! Redirecting to CMS Dashboard...'
         );
-        router.push(`/${locale}/dashboard`);
+        const target = getSafeRedirectUrl(searchParams.get('redirect'), locale);
+        router.push(target);
         router.refresh();
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || 'MFA validation failed');
-      toast.error('Validation error');
+    } catch {
+      setErrorMsg(isNe ? 'MFA प्रमाणीकरण असफल भयो।' : 'MFA validation failed.');
+      toast.error(isNe ? 'प्रमाणीकरण असफल भयो।' : 'Validation error');
     } finally {
       setLoading(false);
     }
@@ -66,14 +81,18 @@ export default function MfaPage({ params: { locale } }: MfaPageProps) {
       <div className="absolute -bottom-32 -left-32 w-80 h-80 rounded-full bg-accent-3/10 blur-3xl" />
 
       <div className="w-full max-w-md bg-surface border border-border rounded-2xl shadow-xl p-8 relative z-10">
-        <div className="text-center mb-8">
-          <div className="relative w-20 h-20 mx-auto rounded-full overflow-hidden border-2 border-accent shadow-md mb-4">
-            <Image src="/logo.jpg" alt="YouTh Brain News" fill className="object-cover" priority />
+        <div className="flex flex-col items-center justify-center text-center mb-8">
+          <div className="w-full flex justify-center items-center mb-5">
+            <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-accent shadow-md flex-shrink-0">
+              <Image src="/logo.jpg" alt="YouTh Brain News" fill className="object-cover" priority />
+            </div>
           </div>
+
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-3/10 text-accent-3 text-xs font-bold mb-2">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>{isNe ? 'दोस्रो-तह प्रमाणीकरण (२FA)' : 'Two-Factor Authentication'}</span>
           </div>
+
           <h1 className="text-2xl font-extrabold text-text-1">
             {isNe ? 'TOTP कोड प्रविष्ट गर्नुहोस्' : 'Enter Authenticator Code'}
           </h1>
@@ -91,7 +110,7 @@ export default function MfaPage({ params: { locale } }: MfaPageProps) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
           <div>
             <label className="block text-xs font-bold text-text-1 uppercase tracking-wider mb-2 text-center">
               {isNe ? '६-अंकको प्रमाणीकरण कोड' : '6-Digit TOTP Code'}
@@ -144,5 +163,19 @@ export default function MfaPage({ params: { locale } }: MfaPageProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MfaPage({ params: { locale } }: MfaPageProps) {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen bg-bg-primary flex items-center justify-center text-text-3">
+          Loading...
+        </div>
+      }
+    >
+      <MfaFormContent locale={locale} />
+    </React.Suspense>
   );
 }
