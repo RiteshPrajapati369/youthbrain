@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "youth-brain-news",
+  "name": "youthbrain",
   "main": ".open-next/worker.js",
   "compatibility_date": "2024-09-23",
   "compatibility_flags": ["nodejs_compat"],
@@ -8,5 +8,14 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
-  "workers_dev": true
+  "workers_dev": true,
+  "vars": {
+    "NEXT_PUBLIC_SITE_URL": "https://youthbrain.com.np",
+    "NEXT_PUBLIC_DEFAULT_LOCALE": "ne",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://mpdqhdsojfmlezmkyikg.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wZHFoZHNvamZtbGV6bWt5aWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2MzQxMDMsImV4cCI6MjEwODIxMDEwM30.gDFcGeGkknaM5TTAP7KgB1bsRIsOL63m00hYP6QKoto",
+    "NEXT_PUBLIC_PORTFOLIO_PROFILE_ID": "00000000-0000-0000-0000-000000000001",
+    "EMAIL_FROM": "YouTh Brain News <onboarding@resend.dev>",
+    "OWNER_EMAIL": "panditritesh005@gmail.com"
+  }
 }
