@@ -148,7 +148,7 @@ export function PaginatedNewsGrid({ articles, locale }: PaginatedNewsGridProps) 
               className={`inline-flex items-center gap-1 px-3.5 py-2 rounded-xl text-sm font-semibold border transition-all ${
                 validPage === 1
                   ? 'border-border text-text-3 opacity-40 cursor-not-allowed bg-surface'
-                  : 'border-border bg-surface text-text-1 hover:border-accent hover:text-accent shadow-sm active:scale-95'
+                  : 'border-border bg-surface text-text-1 hover:border-accent hover:text-accent hover:bg-bg-soft shadow-sm active:scale-95'
               }`}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -175,10 +175,10 @@ export function PaginatedNewsGrid({ articles, locale }: PaginatedNewsGridProps) 
                     key={`page-${item}`}
                     type="button"
                     onClick={() => handlePageChange(item)}
-                    className={`w-10 h-10 rounded-xl text-sm font-bold border transition-all flex items-center justify-center ${
+                    className={`w-10 h-10 rounded-xl text-sm transition-all flex items-center justify-center ${
                       isActive
-                        ? 'bg-primary text-white border-primary shadow-md'
-                        : 'bg-surface text-text-1 border-border hover:border-accent hover:text-accent active:scale-95'
+                        ? 'bg-bg-soft text-accent dark:text-white border-2 border-accent font-extrabold shadow-sm scale-105'
+                        : 'bg-surface text-text-1 border border-border hover:border-accent hover:text-accent hover:bg-bg-soft font-semibold active:scale-95'
                     }`}
                   >
                     {formatPageNum(item)}
@@ -195,7 +195,7 @@ export function PaginatedNewsGrid({ articles, locale }: PaginatedNewsGridProps) 
               className={`inline-flex items-center gap-1 px-3.5 py-2 rounded-xl text-sm font-semibold border transition-all ${
                 validPage >= totalPages
                   ? 'border-border text-text-3 opacity-40 cursor-not-allowed bg-surface'
-                  : 'border-border bg-surface text-text-1 hover:border-accent hover:text-accent shadow-sm active:scale-95'
+                  : 'border-border bg-surface text-text-1 hover:border-accent hover:text-accent hover:bg-bg-soft shadow-sm active:scale-95'
               }`}
             >
               <span>{isNe ? 'पछिल्लो' : 'Next'}</span>
