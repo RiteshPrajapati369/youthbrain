@@ -1,4 +1,5 @@
 import { createAdminClient } from './supabase-admin';
+import { fetchStoreArticles, fetchStoreArticleBySlug } from './article-store';
 import type { Article, Category, HomepageSection, Profile, SocialLink, SiteSettings } from '@/types';
 
 // Articles
@@ -10,73 +11,102 @@ export async function getArticles(params?: {
   offset?: number;
   status?: string;
 }): Promise<Article[]> {
-  const supabase = createAdminClient();
-  let query = supabase
-    .from('articles')
-    .select(`
-      *,
-      category:categories(*)
-    `)
-    .is('deleted_at', null)
-    .order('published_at', { ascending: false });
+  try {
+    const supabase = createAdminClient();
+    let query = supabase
+      .from('articles')
+      .select(`
+        *,
+        category:categories(*)
+      `)
+      .is('deleted_at', null)
+      .order('published_at', { ascending: false });
 
-  if (params?.status) {
-    query = query.eq('status', params.status);
-  } else {
-    query = query.eq('status', 'published');
-  }
-
-  if (params?.isBreaking !== undefined) {
-    query = query.eq('is_breaking', params.isBreaking);
-  }
-
-  if (params?.isFeatured !== undefined) {
-    query = query.eq('is_featured', params.isFeatured);
-  }
-
-  if (params?.categorySlug) {
-    const { data: cat } = await supabase
-      .from('categories')
-      .select('id')
-      .eq('slug', params.categorySlug)
-      .maybeSingle();
-
-    if (cat?.id) {
-      query = query.eq('category_id', cat.id);
+    if (params?.status) {
+      query = query.eq('status', params.status);
+    } else {
+      query = query.eq('status', 'published');
     }
+
+    if (params?.isBreaking !== undefined) {
+      query = query.eq('is_breaking', params.isBreaking);
+    }
+
+    if (params?.isFeatured !== undefined) {
+      query = query.eq('is_featured', params.isFeatured);
+    }
+
+    if (params?.categorySlug) {
+      const { data: cat } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('slug', params.categorySlug)
+        .maybeSingle();
+
+      if (cat?.id) {
+        query = query.eq('category_id', cat.id);
+      }
+    }
+
+    if (params?.limit) {
+      query = query.limit(params.limit);
+    }
+
+    if (params?.offset) {
+      query = query.range(params.offset, params.offset + (params.limit || 10) - 1);
+    }
+
+    const { data, error } = await query;
+    if (!error && data && data.length > 0) {
+      return data as Article[];
+    }
+  } catch {
+    // Supabase fallback
   }
 
+  // Fallback to unified article store
+  const all = await fetchStoreArticles();
+  const targetStatus = params?.status || 'published';
+
+  let filtered = all.filter((a) => {
+    if (a.status !== targetStatus) return false;
+    if (params?.isBreaking !== undefined && a.is_breaking !== params.isBreaking) return false;
+    if (params?.isFeatured !== undefined && a.is_featured !== params.isFeatured) return false;
+    if (params?.categorySlug && a.category?.slug !== params.categorySlug) return false;
+    return true;
+  });
+
+  const offset = params?.offset || 0;
   if (params?.limit) {
-    query = query.limit(params.limit);
+    filtered = filtered.slice(offset, offset + params.limit);
+  } else if (offset > 0) {
+    filtered = filtered.slice(offset);
   }
 
-  if (params?.offset) {
-    query = query.range(params.offset, params.offset + (params.limit || 10) - 1);
-  }
-
-  const { data, error } = await query;
-  if (error || !data) {
-    return [];
-  }
-  return data as Article[];
+  return filtered;
 }
 
 export async function getArticleBySlug(slug: string): Promise<Article | null> {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from('articles')
-    .select(`
-      *,
-      category:categories(*)
-    `)
-    .eq('slug', slug)
-    .is('deleted_at', null)
-    .maybeSingle();
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from('articles')
+      .select(`
+        *,
+        category:categories(*)
+      `)
+      .eq('slug', slug)
+      .is('deleted_at', null)
+      .maybeSingle();
 
-  if (error || !data) {
-    return null;
+    if (!error && data) {
+      return data as Article;
+    }
+  } catch {
+    // Supabase fallback
   }
-  return data as Article;
+
+  return await fetchStoreArticleBySlug(slug);
 }
 
 export async function getBreakingNews(limit = 5): Promise<Article[]> {
@@ -89,22 +119,30 @@ export async function getFeaturedArticles(limit = 4): Promise<Article[]> {
 
 export async function getRelatedArticles(categoryId: string | null, currentArticleId: string, limit = 4): Promise<Article[]> {
   if (!categoryId) return [];
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from('articles')
-    .select(`
-      *,
-      category:categories(*)
-    `)
-    .eq('category_id', categoryId)
-    .neq('id', currentArticleId)
-    .eq('status', 'published')
-    .is('deleted_at', null)
-    .order('published_at', { ascending: false })
-    .limit(limit);
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from('articles')
+      .select(`
+        *,
+        category:categories(*)
+      `)
+      .eq('category_id', categoryId)
+      .neq('id', currentArticleId)
+      .eq('status', 'published')
+      .is('deleted_at', null)
+      .order('published_at', { ascending: false })
+      .limit(limit);
 
-  if (error || !data) return [];
-  return data as Article[];
+    if (!error && data && data.length > 0) return data as Article[];
+  } catch {
+    // Supabase fallback
+  }
+
+  const all = await fetchStoreArticles();
+  return all
+    .filter((a) => a.category_id === categoryId && a.id !== currentArticleId && a.status === 'published')
+    .slice(0, limit);
 }
 
 export async function incrementViewCount(slug: string) {

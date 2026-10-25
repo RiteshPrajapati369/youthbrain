@@ -15,15 +15,21 @@ export async function GET() {
   const isAuthed = await checkAuth();
   if (!isAuthed) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .is('deleted_at', null)
-    .order('sort_order', { ascending: true });
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .is('deleted_at', null)
+      .order('sort_order', { ascending: true });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ categories: data && data.length > 0 ? data : DEFAULT_PRIORITY_CATEGORIES });
+    if (error || !data || data.length === 0) {
+      return NextResponse.json({ categories: DEFAULT_PRIORITY_CATEGORIES });
+    }
+    return NextResponse.json({ categories: data });
+  } catch {
+    return NextResponse.json({ categories: DEFAULT_PRIORITY_CATEGORIES });
+  }
 }
 
 export async function POST(request: NextRequest) {

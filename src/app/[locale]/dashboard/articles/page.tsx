@@ -14,6 +14,9 @@ import {
   Check,
   X,
   Upload,
+  Languages,
+  RefreshCw,
+  Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
@@ -56,6 +59,152 @@ export default function DashboardArticlesPage({ params: { locale } }: ArticlesPa
     seo_title: '',
     seo_description: '',
   });
+
+  // Translation State & Synchronization
+  const [autoTranslate, setAutoTranslate] = useState(true);
+  const [translatingField, setTranslatingField] = useState<string | null>(null);
+  const [activeSourceLocale, setActiveSourceLocale] = useState<'ne' | 'en' | null>(null);
+  const debounceTimerRef = React.useRef<{ [key: string]: NodeJS.Timeout }>({});
+
+  // Cleanup debounce timers on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(debounceTimerRef.current).forEach((timer) => clearTimeout(timer));
+    };
+  }, []);
+
+  const translateSingleField = async (
+    fieldName: 'title' | 'summary' | 'content',
+    from: 'ne' | 'en',
+    to: 'ne' | 'en',
+    textValue?: string
+  ) => {
+    const sourceVal =
+      textValue !== undefined
+        ? textValue
+        : from === 'ne'
+        ? formData[`${fieldName}_ne`]
+        : formData[`${fieldName}_en`];
+
+    if (!sourceVal || !sourceVal.trim()) return;
+
+    setTranslatingField(fieldName);
+    try {
+      const res = await fetch(`/${locale}/api/dashboard/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: sourceVal, from, to }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.translatedText) {
+          setFormData((prev) => {
+            const next = { ...prev };
+            const targetKey = `${fieldName}_${to}` as keyof typeof prev;
+            (next as any)[targetKey] = data.translatedText;
+            if (fieldName === 'title' && to === 'en') {
+              const currentSlug = prev.slug.trim();
+              if (!currentSlug || currentSlug.startsWith('news-') || currentSlug === 'news') {
+                next.slug = data.translatedText
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, '-')
+                  .replace(/^-|-$/g, '')
+                  .slice(0, 80);
+              }
+            }
+            return next;
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Translation error:', err);
+    } finally {
+      setTranslatingField(null);
+    }
+  };
+
+  const translateAllFields = async (from: 'ne' | 'en', to: 'ne' | 'en') => {
+    const title = from === 'ne' ? formData.title_ne : formData.title_en;
+    const summary = from === 'ne' ? formData.summary_ne : formData.summary_en;
+    const content = from === 'ne' ? formData.content_ne : formData.content_en;
+
+    if (!title && !summary && !content) {
+      toast.error(isNe ? 'अनुवाद गर्नका लागि कुनै सामग्री छैन।' : 'No content to translate.');
+      return;
+    }
+
+    setTranslatingField('all');
+    try {
+      const res = await fetch(`/${locale}/api/dashboard/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fields: { title, summary, content },
+          from,
+          to,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.translatedFields) {
+          setFormData((prev) => {
+            const next = { ...prev };
+            if (data.translatedFields.title) {
+              (next as any)[`title_${to}`] = data.translatedFields.title;
+              if (to === 'en') {
+                const currentSlug = prev.slug.trim();
+                if (!currentSlug || currentSlug.startsWith('news-') || currentSlug === 'news') {
+                  next.slug = data.translatedFields.title
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-|-$/g, '')
+                    .slice(0, 80);
+                }
+              }
+            }
+            if (data.translatedFields.summary) {
+              (next as any)[`summary_${to}`] = data.translatedFields.summary;
+            }
+            if (data.translatedFields.content) {
+              (next as any)[`content_${to}`] = data.translatedFields.content;
+            }
+            return next;
+          });
+          toast.success(
+            isNe
+              ? `सफलतापूर्वक ${from === 'ne' ? 'अंग्रेजीमा' : 'नेपालीमा'} अनुवाद भयो।`
+              : `Successfully translated to ${to === 'ne' ? 'Nepali' : 'English'}.`
+          );
+        }
+      } else {
+        toast.error(isNe ? 'अनुवाद सेवामा समस्या आयो।' : 'Translation service error.');
+      }
+    } catch {
+      toast.error('Translation failed');
+    } finally {
+      setTranslatingField(null);
+    }
+  };
+
+  const triggerDebouncedTranslate = (
+    fieldName: 'title' | 'summary' | 'content',
+    val: string,
+    from: 'ne' | 'en',
+    to: 'ne' | 'en',
+    delay = 900
+  ) => {
+    if (!autoTranslate) return;
+    if (debounceTimerRef.current[fieldName]) {
+      clearTimeout(debounceTimerRef.current[fieldName]);
+    }
+    if (!val || !val.trim()) return;
+
+    debounceTimerRef.current[fieldName] = setTimeout(() => {
+      translateSingleField(fieldName, from, to, val);
+    }, delay);
+  };
 
   const loadData = async () => {
     try {
@@ -507,60 +656,224 @@ export default function DashboardArticlesPage({ params: { locale } }: ArticlesPa
                 </div>
               </div>
 
+              {/* Bilingual Auto-Sync Translation Header */}
+              <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-gradient-to-r from-accent/10 via-surface-2 to-accent-3/10 border border-accent/25 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-accent text-white shadow-sm flex-shrink-0">
+                    <Languages className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xs sm:text-sm font-bold text-text-1">
+                        {isNe ? 'द्विभाषिक स्वतः अनुवाद (Bilingual Auto-Sync)' : 'Bilingual Auto-Sync Engine'}
+                      </span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={autoTranslate}
+                          onChange={(e) => setAutoTranslate(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent" />
+                      </label>
+                    </div>
+                    <p className="text-[11px] text-text-3 mt-0.5">
+                      {isNe
+                        ? 'नेपालीमा लेख्दा अंग्रेजीमा र अंग्रेजीमा लेख्दा नेपालीमा स्वतः अनुवाद हुन्छ।'
+                        : 'Typing in Nepali auto-translates to English; typing in English auto-translates to Nepali.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {translatingField && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent/15 text-accent text-xs font-bold animate-pulse">
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>
+                        {translatingField === 'all'
+                          ? (isNe ? 'सबै अनुवाद हुँदैछ...' : 'Translating all...')
+                          : (isNe ? `${translatingField} अनुवाद हुँदैछ...` : `Translating ${translatingField}...`)}
+                      </span>
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => translateAllFields('ne', 'en')}
+                    disabled={translatingField !== null}
+                    className="px-3 py-1.5 rounded-lg bg-surface border border-border text-xs font-bold text-text-1 hover:border-accent hover:text-accent transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-sm"
+                    title="Translate entire article from Nepali to English"
+                  >
+                    <span>🇳🇵 ➔ 🇬🇧 {isNe ? 'सम्पूर्ण अंग्रेजीमा' : 'To English'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => translateAllFields('en', 'ne')}
+                    disabled={translatingField !== null}
+                    className="px-3 py-1.5 rounded-lg bg-surface border border-border text-xs font-bold text-text-1 hover:border-accent hover:text-accent transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-sm"
+                    title="Translate entire article from English to Nepali"
+                  >
+                    <span>🇬🇧 ➔ 🇳🇵 {isNe ? 'सम्पूर्ण नेपालीमा' : 'To Nepali'}</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Multilingual Titles */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-text-1 uppercase tracking-wider mb-1">
-                    {isNe ? 'नेपाली समाचार शीर्षक *' : 'Nepali Title *'}
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-text-1 uppercase tracking-wider">
+                      {isNe ? 'नेपाली समाचार शीर्षक *' : 'Nepali Title *'}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => translateSingleField('title', 'en', 'ne')}
+                      disabled={translatingField !== null || !formData.title_en}
+                      className="text-[11px] text-accent hover:underline inline-flex items-center gap-1 font-semibold disabled:opacity-40"
+                      title="Translate from English"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${translatingField === 'title' ? 'animate-spin' : ''}`} />
+                      <span>{isNe ? 'अंग्रेजीबाट अनुवाद' : 'From EN'}</span>
+                    </button>
+                  </div>
                   <input
                     type="text"
                     required
                     value={formData.title_ne}
-                    onChange={(e) => setFormData({ ...formData, title_ne: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setActiveSourceLocale('ne');
+                      setFormData((prev) => ({ ...prev, title_ne: val }));
+                      triggerDebouncedTranslate('title', val, 'ne', 'en', 800);
+                    }}
+                    onBlur={(e) => {
+                      if (autoTranslate && e.target.value.trim() && !formData.title_en) {
+                        translateSingleField('title', 'ne', 'en', e.target.value);
+                      }
+                    }}
                     placeholder="नेपाली भाषामा मुख्य शीर्षक..."
-                    className="w-full px-3 py-2.5 rounded-lg border border-border bg-bg-primary text-text-1 text-sm font-semibold"
+                    className="w-full px-3 py-2.5 rounded-lg border border-border bg-bg-primary text-text-1 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-text-1 uppercase tracking-wider mb-1">
-                    {isNe ? 'अंग्रेजी शीर्षक *' : 'English Title *'}
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-text-1 uppercase tracking-wider">
+                      {isNe ? 'अंग्रेजी शीर्षक *' : 'English Title *'}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => translateSingleField('title', 'ne', 'en')}
+                      disabled={translatingField !== null || !formData.title_ne}
+                      className="text-[11px] text-accent hover:underline inline-flex items-center gap-1 font-semibold disabled:opacity-40"
+                      title="Translate from Nepali"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${translatingField === 'title' ? 'animate-spin' : ''}`} />
+                      <span>{isNe ? 'नेपालीबाट अनुवाद' : 'From NE'}</span>
+                    </button>
+                  </div>
                   <input
                     type="text"
                     required
                     value={formData.title_en}
-                    onChange={(e) => setFormData({ ...formData, title_en: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setActiveSourceLocale('en');
+                      setFormData((prev) => {
+                        const next = { ...prev, title_en: val };
+                        if (!prev.slug || prev.slug.startsWith('news-')) {
+                          next.slug = val
+                            .toLowerCase()
+                            .replace(/[^a-z0-9]+/g, '-')
+                            .replace(/^-|-$/g, '')
+                            .slice(0, 80);
+                        }
+                        return next;
+                      });
+                      triggerDebouncedTranslate('title', val, 'en', 'ne', 800);
+                    }}
+                    onBlur={(e) => {
+                      if (autoTranslate && e.target.value.trim() && !formData.title_ne) {
+                        translateSingleField('title', 'en', 'ne', e.target.value);
+                      }
+                    }}
                     placeholder="English headline..."
-                    className="w-full px-3 py-2.5 rounded-lg border border-border bg-bg-primary text-text-1 text-sm font-semibold"
+                    className="w-full px-3 py-2.5 rounded-lg border border-border bg-bg-primary text-text-1 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
+              </div>
+
+              {/* Slug Row */}
+              <div>
+                <label className="block text-xs font-bold text-text-1 uppercase tracking-wider mb-1">
+                  {isNe ? 'URL स्लग (Slug) *' : 'URL Slug *'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.slug}
+                  onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                  placeholder="news-article-slug"
+                  className="w-full font-mono px-3 py-2 rounded-lg border border-border bg-bg-primary text-text-1 text-xs sm:text-sm"
+                />
               </div>
 
               {/* Multilingual Summaries */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-text-1 uppercase tracking-wider mb-1">
-                    {isNe ? 'नेपाली सारांश' : 'Nepali Summary'}
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-text-1 uppercase tracking-wider">
+                      {isNe ? 'नेपाली सारांश' : 'Nepali Summary'}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => translateSingleField('summary', 'en', 'ne')}
+                      disabled={translatingField !== null || !formData.summary_en}
+                      className="text-[11px] text-accent hover:underline inline-flex items-center gap-1 font-semibold disabled:opacity-40"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${translatingField === 'summary' ? 'animate-spin' : ''}`} />
+                      <span>{isNe ? 'अंग्रेजीबाट अनुवाद' : 'From EN'}</span>
+                    </button>
+                  </div>
                   <textarea
-                    rows={2}
+                    rows={3}
                     value={formData.summary_ne}
-                    onChange={(e) => setFormData({ ...formData, summary_ne: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setActiveSourceLocale('ne');
+                      setFormData((prev) => ({ ...prev, summary_ne: val }));
+                      triggerDebouncedTranslate('summary', val, 'ne', 'en', 1000);
+                    }}
                     placeholder="संक्षिप्त सारांश (Lead Paragraph)..."
-                    className="w-full px-3 py-2 rounded-lg border border-border bg-bg-primary text-text-1 text-xs sm:text-sm"
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-bg-primary text-text-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-text-1 uppercase tracking-wider mb-1">
-                    {isNe ? 'अंग्रेजी सारांश' : 'English Summary'}
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-text-1 uppercase tracking-wider">
+                      {isNe ? 'अंग्रेजी सारांश' : 'English Summary'}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => translateSingleField('summary', 'ne', 'en')}
+                      disabled={translatingField !== null || !formData.summary_ne}
+                      className="text-[11px] text-accent hover:underline inline-flex items-center gap-1 font-semibold disabled:opacity-40"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${translatingField === 'summary' ? 'animate-spin' : ''}`} />
+                      <span>{isNe ? 'नेपालीबाट अनुवाद' : 'From NE'}</span>
+                    </button>
+                  </div>
                   <textarea
-                    rows={2}
+                    rows={3}
                     value={formData.summary_en}
-                    onChange={(e) => setFormData({ ...formData, summary_en: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setActiveSourceLocale('en');
+                      setFormData((prev) => ({ ...prev, summary_en: val }));
+                      triggerDebouncedTranslate('summary', val, 'en', 'ne', 1000);
+                    }}
                     placeholder="Brief lead summary in English..."
-                    className="w-full px-3 py-2 rounded-lg border border-border bg-bg-primary text-text-1 text-xs sm:text-sm"
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-bg-primary text-text-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
               </div>
@@ -568,29 +881,62 @@ export default function DashboardArticlesPage({ params: { locale } }: ArticlesPa
               {/* Multilingual Markdown Body */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-text-1 uppercase tracking-wider mb-1">
-                    {isNe ? 'नेपाली समाचार सामग्री (Markdown) *' : 'Nepali Content (Markdown) *'}
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-text-1 uppercase tracking-wider">
+                      {isNe ? 'नेपाली समाचार सामग्री (Markdown) *' : 'Nepali Content (Markdown) *'}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => translateSingleField('content', 'en', 'ne')}
+                      disabled={translatingField !== null || !formData.content_en}
+                      className="text-[11px] text-accent hover:underline inline-flex items-center gap-1 font-semibold disabled:opacity-40"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${translatingField === 'content' ? 'animate-spin' : ''}`} />
+                      <span>{isNe ? 'अंग्रेजीबाट अनुवाद' : 'From EN'}</span>
+                    </button>
+                  </div>
                   <textarea
-                    rows={8}
+                    rows={9}
                     required
                     value={formData.content_ne}
-                    onChange={(e) => setFormData({ ...formData, content_ne: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setActiveSourceLocale('ne');
+                      setFormData((prev) => ({ ...prev, content_ne: val }));
+                      triggerDebouncedTranslate('content', val, 'ne', 'en', 1200);
+                    }}
                     placeholder="# मुख्य समाचार विवरण..."
-                    className="w-full font-mono px-3 py-2.5 rounded-lg border border-border bg-bg-primary text-text-1 text-xs sm:text-sm"
+                    className="w-full font-mono px-3 py-2.5 rounded-lg border border-border bg-bg-primary text-text-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-text-1 uppercase tracking-wider mb-1">
-                    {isNe ? 'अंग्रेजी समाचार सामग्री (Markdown) *' : 'English Content (Markdown) *'}
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-text-1 uppercase tracking-wider">
+                      {isNe ? 'अंग्रेजी समाचार सामग्री (Markdown) *' : 'English Content (Markdown) *'}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => translateSingleField('content', 'ne', 'en')}
+                      disabled={translatingField !== null || !formData.content_ne}
+                      className="text-[11px] text-accent hover:underline inline-flex items-center gap-1 font-semibold disabled:opacity-40"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${translatingField === 'content' ? 'animate-spin' : ''}`} />
+                      <span>{isNe ? 'नेपालीबाट अनुवाद' : 'From NE'}</span>
+                    </button>
+                  </div>
                   <textarea
-                    rows={8}
+                    rows={9}
                     required
                     value={formData.content_en}
-                    onChange={(e) => setFormData({ ...formData, content_en: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setActiveSourceLocale('en');
+                      setFormData((prev) => ({ ...prev, content_en: val }));
+                      triggerDebouncedTranslate('content', val, 'en', 'ne', 1200);
+                    }}
                     placeholder="# Comprehensive news body in English..."
-                    className="w-full font-mono px-3 py-2.5 rounded-lg border border-border bg-bg-primary text-text-1 text-xs sm:text-sm"
+                    className="w-full font-mono px-3 py-2.5 rounded-lg border border-border bg-bg-primary text-text-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
               </div>
