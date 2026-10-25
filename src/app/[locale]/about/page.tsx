@@ -123,7 +123,7 @@ export default async function AboutPage({ params: { locale } }: AboutPageProps) 
         </div>
       </main>
 
-      <Footer locale={locale} socialLinks={socialLinks} />
+      <Footer locale={locale} socialLinks={socialLinks} profile={profile} />
     </div>
   );
 }

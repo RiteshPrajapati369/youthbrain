@@ -1,0 +1,67 @@
+{
+  "profile": {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "full_name": "Ritesh Prajapati",
+    "headline": "Editor-in-Chief & Founder, YouTh Brain News",
+    "bio": "Journalist, technologist, and digital media innovator covering Nepal and the world.",
+    "about_description": "YouTh Brain News is a premier independent digital news portal committed to impartial, verified, and timely news reporting.",
+    "avatar_url": "/logo.jpg",
+    "email": "panditritesh005@gmail.com",
+    "secondary_email": "info@youthbrainnews.com.np",
+    "phone": "+977-9800000000",
+    "location": "Hetauda, Nepal",
+    "status": "active",
+    "created_at": "2026-10-25T00:00:00.000Z",
+    "updated_at": "2026-10-25T00:00:00.000Z"
+  },
+  "socialLinks": [
+    {
+      "id": "social-1",
+      "platform": "facebook",
+      "label": "Facebook",
+      "url": "https://facebook.com/youthbrainnews",
+      "is_active": true,
+      "sort_order": 1
+    },
+    {
+      "id": "social-2",
+      "platform": "twitter",
+      "label": "X (Twitter)",
+      "url": "https://twitter.com/youthbrainnews",
+      "is_active": true,
+      "sort_order": 2
+    },
+    {
+      "id": "social-3",
+      "platform": "youtube",
+      "label": "YouTube",
+      "url": "https://youtube.com/@youthbrainnews",
+      "is_active": true,
+      "sort_order": 3
+    },
+    {
+      "id": "social-4",
+      "platform": "linkedin",
+      "label": "LinkedIn",
+      "url": "https://linkedin.com/company/youthbrainnews",
+      "is_active": true,
+      "sort_order": 4
+    },
+    {
+      "id": "social-5",
+      "platform": "instagram",
+      "label": "Instagram",
+      "url": "https://instagram.com/youthbrainnews",
+      "is_active": true,
+      "sort_order": 5
+    },
+    {
+      "id": "social-6",
+      "platform": "whatsapp",
+      "label": "WhatsApp",
+      "url": "https://wa.me/9779800000000",
+      "is_active": false,
+      "sort_order": 6
+    }
+  ]
+}

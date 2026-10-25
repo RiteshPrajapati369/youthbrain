@@ -1,10 +1,10 @@
-'use client';
-
-import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, CheckCircle2, ShieldCheck } from 'lucide-react';
-import { toast } from 'sonner';
+import React from 'react';
+import type { Metadata } from 'next';
+import { Mail, Phone, MapPin, ShieldCheck, Share2 } from 'lucide-react';
+import { getCategories, getOwnerProfile, getSocialLinks } from '@/lib/services';
 import { Navbar } from '@/components/sections/Navbar';
 import { Footer } from '@/components/sections/Footer';
+import { ContactForm } from '@/components/contact/ContactForm';
 
 interface ContactPageProps {
   params: {
@@ -12,51 +12,34 @@ interface ContactPageProps {
   };
 }
 
-export default function ContactPage({ params: { locale } }: ContactPageProps) {
+export async function generateMetadata({
+  params: { locale },
+}: ContactPageProps): Promise<Metadata> {
   const isNe = locale === 'ne';
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: '',
-  });
-  const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const res = await fetch(`/${locale}/api/contact`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || (isNe ? 'सन्देश पठाउन असफल भयो।' : 'Failed to send message.'));
-        setLoading(false);
-        return;
-      }
-
-      setSubmitted(true);
-      toast.success(
-        isNe
-          ? 'तपाईंको सन्देश सम्पादकीय डेस्कमा प्राप्त भयो। धन्यवाद!'
-          : 'Your inquiry has been delivered to our editorial desk. Thank you!'
-      );
-    } catch (err) {
-      toast.error(isNe ? 'नेटवर्क त्रुटि भयो।' : 'Network error. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  return {
+    title: isNe ? 'सम्पर्क - युथ ब्रेन न्युज' : 'Contact Us - YouTh Brain News',
+    description: isNe
+      ? 'YouTh Brain News को सम्पादकीय टोलीलाई समाचार, सुझाव वा सोधपुछ पठाउनुहोस्।'
+      : 'Connect with the YouTh Brain News editorial desk for tips, inquiries, and press releases.',
   };
+}
+
+export default async function ContactPage({ params: { locale } }: ContactPageProps) {
+  const isNe = locale === 'ne';
+  const [categories, profile, socialLinks] = await Promise.all([
+    getCategories(),
+    getOwnerProfile(),
+    getSocialLinks(),
+  ]);
+
+  const location = profile?.location || (isNe ? 'हेटौँडा, नेपाल' : 'Hetauda, Nepal');
+  const primaryEmail = profile?.email || 'panditritesh005@gmail.com';
+  const secondaryEmail = (profile as any)?.secondary_email || 'info@youthbrainnews.com.np';
+  const phone = profile?.phone || '+977-9800000000';
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar locale={locale} categories={[]} />
+      <Navbar locale={locale} categories={categories} />
 
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 w-full">
         <div className="text-center max-w-2xl mx-auto mb-12">
@@ -84,7 +67,7 @@ export default function ContactPage({ params: { locale } }: ContactPageProps) {
                 </div>
                 <div>
                   <h4 className="font-semibold text-text-1">{isNe ? 'ठेगाना' : 'Location'}</h4>
-                  <p>{isNe ? 'हेटौँडा, नेपाल' : 'Hetauda, Nepal'}</p>
+                  <p>{location}</p>
                 </div>
               </div>
 
@@ -93,9 +76,19 @@ export default function ContactPage({ params: { locale } }: ContactPageProps) {
                   <Mail className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-text-1">{isNe ? 'इमेल' : 'Email'}</h4>
-                  <p>panditritesh005@gmail.com</p>
-                  <p>info@youthbrainnews.com.np</p>
+                  <h4 className="font-semibold text-text-1">{isNe ? 'इमेल ठेगाना' : 'Email'}</h4>
+                  <p>
+                    <a href={`mailto:${primaryEmail}`} className="hover:text-accent">
+                      {primaryEmail}
+                    </a>
+                  </p>
+                  {secondaryEmail && (
+                    <p>
+                      <a href={`mailto:${secondaryEmail}`} className="hover:text-accent text-xs text-text-3">
+                        {secondaryEmail}
+                      </a>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -105,124 +98,64 @@ export default function ContactPage({ params: { locale } }: ContactPageProps) {
                 </div>
                 <div>
                   <h4 className="font-semibold text-text-1">{isNe ? 'फोन' : 'Hotline'}</h4>
-                  <p>+977-9800000000</p>
+                  <p>
+                    <a href={`tel:${phone}`} className="hover:text-accent">
+                      {phone}
+                    </a>
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="pt-6 border-t border-border flex items-center gap-2 text-xs text-text-3">
-              <ShieldCheck className="w-4 h-4 text-accent-3 flex-shrink-0" />
+            {socialLinks && socialLinks.length > 0 && (
+              <div className="pt-4 border-t border-border">
+                <h4 className="font-semibold text-xs text-text-3 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <Share2 className="w-3.5 h-3.5 text-accent" />
+                  <span>{isNe ? 'सामाजिक सञ्जालमा जोडिनुहोस्' : 'Connect Online'}</span>
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {socialLinks.map((s) => (
+                    <a
+                      key={s.id}
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1 rounded-lg bg-surface-2 border border-border text-xs font-medium text-text-2 hover:border-accent hover:text-accent transition-all"
+                    >
+                      {s.label || s.platform}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="pt-4 border-t border-border flex items-center gap-2 text-xs text-text-3">
+              <ShieldCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />
               <span>
                 {isNe
-                  ? 'स्रोतको गोपनीयता र सुरक्षाको पूर्ण ग्यारेन्टी गरिन्छ।'
-                  : 'Source confidentiality and data protection strictly guaranteed.'}
+                  ? 'स्रोतको गोपनीयता र सुरक्षाको पूर्ण प्रत्याभूति गरिन्छ।'
+                  : 'Source confidentiality and whistle-blower security strictly guaranteed.'}
               </span>
             </div>
           </div>
 
-          {/* Contact Form */}
+          {/* Interactive Contact Form Card */}
           <div className="lg:col-span-7 bg-surface rounded-2xl p-6 sm:p-8 border border-border shadow-sm">
-            {submitted ? (
-              <div className="text-center py-12 space-y-4">
-                <div className="w-16 h-16 mx-auto rounded-full bg-accent-3/15 text-accent-3 flex items-center justify-center">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <h3 className="text-2xl font-bold text-text-1">
-                  {isNe ? 'सन्देश सफलतापूर्वक पठाइयो!' : 'Message Sent Successfully!'}
-                </h3>
-                <p className="text-sm text-text-2 max-w-md mx-auto">
-                  {isNe
-                    ? 'हाम्रो सम्पादकीय समूहले तपाईंको सन्देश अध्ययन गरेर चाँडै सम्पर्क गर्नेछ।'
-                    : 'Our editorial team will review your dispatch and get in touch promptly.'}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSubmitted(false);
-                    setFormData({ name: '', email: '', subject: '', message: '' });
-                  }}
-                  className="mt-4 px-6 py-2.5 rounded-xl bg-accent text-white text-sm font-semibold hover:bg-accent/90"
-                >
-                  {isNe ? 'अर्को सन्देश पठाउनुहोस्' : 'Send Another Message'}
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-text-1 uppercase tracking-wider mb-1.5">
-                    {isNe ? 'तपाईंको नाम' : 'Full Name'} *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder={isNe ? 'पूरा नाम लेख्नुहोस्' : 'Your full name'}
-                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-bg-primary text-text-1 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                </div>
+            <h3 className="text-xl font-bold text-text-1 mb-2">
+              {isNe ? 'अनलाइन सन्देश पठाउनुहोस्' : 'Send an Inquiry'}
+            </h3>
+            <p className="text-xs text-text-3 mb-6">
+              {isNe
+                ? 'समाचार सुझाव, विज्ञप्ति वा सम्पादकीय प्रश्नका लागि तलको फारम भर्नुहोस्।'
+                : 'Fill out the form below to reach the editorial desk directly.'}
+            </p>
 
-                <div>
-                  <label className="block text-xs font-bold text-text-1 uppercase tracking-wider mb-1.5">
-                    {isNe ? 'इमेल ठेगाना' : 'Email Address'} *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder={isNe ? 'example@domain.com' : 'you@example.com'}
-                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-bg-primary text-text-1 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-text-1 uppercase tracking-wider mb-1.5">
-                    {isNe ? 'विषय' : 'Subject'} *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.subject}
-                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    placeholder={isNe ? 'समाचार सुझाव वा सोधपुछ' : 'Story tip, inquiry, or partnership'}
-                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-bg-primary text-text-1 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-text-1 uppercase tracking-wider mb-1.5">
-                    {isNe ? 'सन्देश विवरण' : 'Detailed Message'} *
-                  </label>
-                  <textarea
-                    required
-                    rows={5}
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    placeholder={isNe ? 'आफ्नो सन्देश यहाँ स्पष्टसँग लेख्नुहोस्...' : 'Write your full message here...'}
-                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-bg-primary text-text-1 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 rounded-xl bg-accent hover:bg-accent/90 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  <Send className="w-4 h-4" />
-                  <span>
-                    {loading
-                      ? isNe ? 'पठाउँदै...' : 'Sending...'
-                      : isNe ? 'सन्देश पठाउनुहोस्' : 'Send Message'}
-                  </span>
-                </button>
-              </form>
-            )}
+            <ContactForm locale={locale} />
           </div>
         </div>
       </main>
 
-      <Footer locale={locale} socialLinks={[]} />
+      <Footer locale={locale} socialLinks={socialLinks} profile={profile} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { createAdminClient } from './supabase-admin';
 import { fetchStoreArticles, fetchStoreArticleBySlug } from './article-store';
+import { fetchStoreProfile, fetchStoreSocialLinks } from './settings-store';
 import type { Article, Category, HomepageSection, Profile, SocialLink, SiteSettings } from '@/types';
 
 // Articles
@@ -323,25 +324,18 @@ export async function getSiteSettings(): Promise<SiteSettings> {
 
 // Profile
 export async function getOwnerProfile(): Promise<Profile | null> {
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from('profiles')
-    .select('*')
-    .limit(1)
-    .maybeSingle();
-
-  return data as Profile | null;
+  try {
+    return await fetchStoreProfile();
+  } catch {
+    return null;
+  }
 }
 
 // Social Links
 export async function getSocialLinks(): Promise<SocialLink[]> {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from('social_links')
-    .select('*')
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true });
-
-  if (error || !data) return [];
-  return data as SocialLink[];
+  try {
+    return await fetchStoreSocialLinks(true);
+  } catch {
+    return [];
+  }
 }

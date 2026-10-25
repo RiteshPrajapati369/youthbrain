@@ -5,6 +5,7 @@ import {
   getFeaturedArticles,
   getCategories,
   getSocialLinks,
+  getOwnerProfile,
 } from '@/lib/services';
 import { Navbar } from '@/components/sections/Navbar';
 import { BreakingTicker } from '@/components/sections/BreakingTicker';
@@ -23,13 +24,14 @@ interface HomePageProps {
 export const revalidate = 60; // Incremental Static Regeneration every 60s
 
 export default async function HomePage({ params: { locale } }: HomePageProps) {
-  const [breakingNews, featuredArticles, allArticles, categories, socialLinks] =
+  const [breakingNews, featuredArticles, allArticles, categories, socialLinks, profile] =
     await Promise.all([
       getBreakingNews(6),
       getFeaturedArticles(5),
       getArticles(),
       getCategories(),
       getSocialLinks(),
+      getOwnerProfile(),
     ]);
 
   // Identify articles displayed in HeroFeatured section to avoid duplicate display
@@ -69,7 +71,7 @@ export default async function HomePage({ params: { locale } }: HomePageProps) {
         <NewsletterSection locale={locale} />
       </main>
 
-      <Footer locale={locale} socialLinks={socialLinks} />
+      <Footer locale={locale} socialLinks={socialLinks} profile={profile} />
     </div>
   );
 }
