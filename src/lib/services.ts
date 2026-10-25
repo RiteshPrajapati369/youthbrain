@@ -284,27 +284,35 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
 
 // Homepage Sections
 export async function getHomepageSections(): Promise<HomepageSection[]> {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from('homepage_sections')
-    .select('*')
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true });
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from('homepage_sections')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
 
-  if (error || !data) return [];
-  return data as HomepageSection[];
+    if (error || !data) return [];
+    return data as HomepageSection[];
+  } catch {
+    return [];
+  }
 }
 
 // Site Settings
 export async function getSiteSettings(): Promise<SiteSettings> {
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from('site_settings')
-    .select('*')
-    .limit(1)
-    .maybeSingle();
+  try {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from('site_settings')
+      .select('*')
+      .limit(1)
+      .maybeSingle();
 
-  if (data) return data as SiteSettings;
+    if (data) return data as SiteSettings;
+  } catch {
+    // Supabase fallback
+  }
 
   // Fallback defaults
   return {
