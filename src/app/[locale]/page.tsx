@@ -32,9 +32,9 @@ export default async function HomePage({ params: { locale } }: HomePageProps) {
       getSocialLinks(),
     ]);
 
-  // Fetch articles per category
+  // Fetch articles per category (all priority categories)
   const categoriesWithArticles = await Promise.all(
-    categories.slice(0, 4).map(async (cat) => {
+    categories.slice(0, 6).map(async (cat) => {
       const articles = await getArticles({ categorySlug: cat.slug, limit: 5 });
       return {
         category: cat,

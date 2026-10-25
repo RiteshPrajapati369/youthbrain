@@ -22,19 +22,19 @@ INSERT INTO public.profiles (
     '/logo.jpg',
     'panditritesh005@gmail.com',
     '+977-9800000000',
-    'Kathmandu, Nepal',
+    'Hetauda, Nepal',
     'active'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- Default Categories
 INSERT INTO public.categories (id, profile_id, name_ne, name_en, slug, description_ne, description_en, color, sort_order, is_active)
 VALUES 
-    ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'राजनीति', 'Politics', 'politics', 'समसामयिक राजनीतिक घटनाक्रम र विश्लेषण', 'Contemporary political events and policy analysis', '#235DBC', 1, true),
-    ('10000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000002', 'प्रविधि', 'Technology', 'technology', 'आर्टिफिसियल इन्टेलिजेन्स, नवप्रवर्तन र डिजिटल नेपाल', 'Artificial intelligence, tech innovation and digital ecosystem', '#EA4C89', 2, true),
-    ('10000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000003', 'युवा र उद्यम', 'Youth & Enterprise', 'youth', 'नेपाली युवाहरूको नेतृत्व र स्टार्टअप लहर', 'Nepali youth leadership, entrepreneurship and startups', '#4DAA57', 3, true),
-    ('10000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000004', 'शिक्षा', 'Education', 'education', 'उच्च शिक्षा, छात्रवृत्ति र अनुसन्धान', 'Higher education, scholarships and research developments', '#F59E0B', 4, true),
-    ('10000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000005', 'खेलकुद', 'Sports', 'sports', 'क्रिकेट, फुटबल र राष्ट्रिय खेल समाचार', 'Cricket, football and national sporting achievements', '#8B5CF6', 5, true),
-    ('10000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000006', 'संस्कृति र कला', 'Culture & Arts', 'culture', 'नेपाली मौलिक सम्पदा, चाडपर्व र साहित्य', 'Nepali heritage, festivals and contemporary literature', '#06B6D4', 6, true)
+    ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'राजनीति', 'Politics', 'politics', 'समसामयिक राजनीतिक घटनाक्रम र नीतिगत विश्लेषण', 'Contemporary political events and policy analysis', '#235DBC', 1, true),
+    ('10000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', 'समाज', 'Society', 'society', 'सामाजिक सरोकार, न्याय, जनजीवन र रूपान्तरण', 'Social issues, justice, grassroots and community development', '#06B6D4', 2, true),
+    ('10000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000001', 'अर्थ', 'Economy', 'economy', 'अर्थतन्त्र, व्यापार, वित्त र बजार विश्लेषण', 'Economy, business, finance and market insights', '#10B981', 3, true),
+    ('10000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000001', 'विज्ञान तथा प्रविधि', 'Science & Technology', 'science-tech', 'आर्टिफिसियल इन्टेलिजेन्स, डिजिटल आविष्कार र वैज्ञानिक खोज', 'AI, digital innovation and scientific breakthroughs', '#EA4C89', 4, true),
+    ('10000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000001', 'खेलकुद', 'Sports', 'sports', 'क्रिकेट, फुटबल र राष्ट्रिय तथा अन्तर्राष्ट्रिय खेल', 'Cricket, football and sporting highlights', '#8B5CF6', 5, true),
+    ('10000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000001', 'अन्तर्वार्ता', 'Interview', 'interview', 'राजनीतिक नेतृत्व, विज्ञ र प्रेरक व्यक्तित्वहरूसँग विशेष संवाद', 'Exclusive dialogues with policymakers, thinkers and leaders', '#F59E0B', 6, true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Seed Articles

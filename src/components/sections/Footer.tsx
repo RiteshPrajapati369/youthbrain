@@ -73,33 +73,33 @@ export function Footer({ locale, socialLinks }: FooterProps) {
                 </Link>
               </li>
               <li>
-                <Link href={`/${locale}/news`} className="hover:text-accent transition-colors">
-                  {isNe ? 'सम्पूर्ण समाचार' : 'All News'}
-                </Link>
-              </li>
-              <li>
-                <Link href={`/${locale}/category/technology`} className="hover:text-accent transition-colors">
-                  {isNe ? 'सूचना प्रविधि' : 'Technology'}
-                </Link>
-              </li>
-              <li>
                 <Link href={`/${locale}/category/politics`} className="hover:text-accent transition-colors">
                   {isNe ? 'राजनीति' : 'Politics'}
                 </Link>
               </li>
               <li>
-                <Link href={`/${locale}/category/youth`} className="hover:text-accent transition-colors">
-                  {isNe ? 'युवा र उद्यम' : 'Youth & Startups'}
+                <Link href={`/${locale}/category/society`} className="hover:text-accent transition-colors">
+                  {isNe ? 'समाज' : 'Society'}
                 </Link>
               </li>
               <li>
-                <Link href={`/${locale}/about`} className="hover:text-accent transition-colors">
-                  {isNe ? 'हाम्रोबारे' : 'About Us'}
+                <Link href={`/${locale}/category/economy`} className="hover:text-accent transition-colors">
+                  {isNe ? 'अर्थ' : 'Economy'}
                 </Link>
               </li>
               <li>
-                <Link href={`/${locale}/contact`} className="hover:text-accent transition-colors">
-                  {isNe ? 'सम्पर्क' : 'Contact Us'}
+                <Link href={`/${locale}/category/science-tech`} className="hover:text-accent transition-colors">
+                  {isNe ? 'विज्ञान तथा प्रविधि' : 'Science & Tech'}
+                </Link>
+              </li>
+              <li>
+                <Link href={`/${locale}/category/sports`} className="hover:text-accent transition-colors">
+                  {isNe ? 'खेलकुद' : 'Sports'}
+                </Link>
+              </li>
+              <li>
+                <Link href={`/${locale}/category/interview`} className="hover:text-accent transition-colors">
+                  {isNe ? 'अन्तर्वार्ता' : 'Interview'}
                 </Link>
               </li>
             </ul>
@@ -113,7 +113,7 @@ export function Footer({ locale, socialLinks }: FooterProps) {
             <div className="space-y-2.5 text-sm text-text-3">
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-accent flex-shrink-0" />
-                <span>{isNe ? 'काठमाडौँ, नेपाल' : 'Kathmandu, Nepal'}</span>
+                <span>{isNe ? 'हेटौँडा, नेपाल' : 'Hetauda, Nepal'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-accent flex-shrink-0" />

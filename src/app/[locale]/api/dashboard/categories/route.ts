@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/owner-auth';
 import { createAdminClient } from '@/lib/supabase-admin';
+import { DEFAULT_PRIORITY_CATEGORIES } from '@/lib/services';
 
 async function checkAuth() {
   const cookieStore = cookies();
@@ -22,7 +23,7 @@ export async function GET() {
     .order('sort_order', { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ categories: data });
+  return NextResponse.json({ categories: data && data.length > 0 ? data : DEFAULT_PRIORITY_CATEGORIES });
 }
 
 export async function POST(request: NextRequest) {

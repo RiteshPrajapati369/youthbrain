@@ -84,7 +84,7 @@ export default function ContactPage({ params: { locale } }: ContactPageProps) {
                 </div>
                 <div>
                   <h4 className="font-semibold text-text-1">{isNe ? 'ठेगाना' : 'Location'}</h4>
-                  <p>{isNe ? 'काठमाडौँ, नेपाल' : 'Kathmandu, Nepal'}</p>
+                  <p>{isNe ? 'हेटौँडा, नेपाल' : 'Hetauda, Nepal'}</p>
                 </div>
               </div>
 

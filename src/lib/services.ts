@@ -127,6 +127,88 @@ export async function incrementViewCount(slug: string) {
   }
 }
 
+// Priority Categories Definition
+export const DEFAULT_PRIORITY_CATEGORIES: Category[] = [
+  {
+    id: '10000000-0000-0000-0000-000000000001',
+    name_ne: 'राजनीति',
+    name_en: 'Politics',
+    slug: 'politics',
+    description_ne: 'समसामयिक राजनीतिक घटनाक्रम र नीतिगत विश्लेषण',
+    description_en: 'Contemporary political events and policy analysis',
+    color: '#235DBC',
+    sort_order: 1,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: '10000000-0000-0000-0000-000000000002',
+    name_ne: 'समाज',
+    name_en: 'Society',
+    slug: 'society',
+    description_ne: 'सामाजिक सरोकार, न्याय, जनजीवन र रूपान्तरण',
+    description_en: 'Social issues, justice, grassroots and community development',
+    color: '#06B6D4',
+    sort_order: 2,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: '10000000-0000-0000-0000-000000000003',
+    name_ne: 'अर्थ',
+    name_en: 'Economy',
+    slug: 'economy',
+    description_ne: 'अर्थतन्त्र, व्यापार, वित्त र बजार विश्लेषण',
+    description_en: 'Economy, business, finance and market insights',
+    color: '#10B981',
+    sort_order: 3,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: '10000000-0000-0000-0000-000000000004',
+    name_ne: 'विज्ञान तथा प्रविधि',
+    name_en: 'Science & Technology',
+    slug: 'science-tech',
+    description_ne: 'आर्टिफिसियल इन्टेलिजेन्स, डिजिटल आविष्कार र वैज्ञानिक खोज',
+    description_en: 'AI, digital innovation and scientific breakthroughs',
+    color: '#EA4C89',
+    sort_order: 4,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: '10000000-0000-0000-0000-000000000005',
+    name_ne: 'खेलकुद',
+    name_en: 'Sports',
+    slug: 'sports',
+    description_ne: 'क्रिकेट, फुटबल र राष्ट्रिय तथा अन्तर्राष्ट्रिय खेल',
+    description_en: 'Cricket, football and sporting highlights',
+    color: '#8B5CF6',
+    sort_order: 5,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: '10000000-0000-0000-0000-000000000006',
+    name_ne: 'अन्तर्वार्ता',
+    name_en: 'Interview',
+    slug: 'interview',
+    description_ne: 'राजनीतिक नेतृत्व, विज्ञ र प्रेरक व्यक्तित्वहरूसँग विशेष संवाद',
+    description_en: 'Exclusive dialogues with policymakers, thinkers and leaders',
+    color: '#F59E0B',
+    sort_order: 6,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
+
 // Categories
 export async function getCategories(): Promise<Category[]> {
   const supabase = createAdminClient();
@@ -137,21 +219,27 @@ export async function getCategories(): Promise<Category[]> {
     .is('deleted_at', null)
     .order('sort_order', { ascending: true });
 
-  if (error || !data) return [];
+  if (error || !data || data.length === 0) {
+    return DEFAULT_PRIORITY_CATEGORIES;
+  }
   return data as Category[];
 }
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
+  const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '');
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('categories')
     .select('*')
-    .eq('slug', slug)
+    .eq('slug', cleanSlug)
     .eq('is_active', true)
     .is('deleted_at', null)
     .maybeSingle();
 
-  if (error || !data) return null;
+  if (error || !data) {
+    const fallback = DEFAULT_PRIORITY_CATEGORIES.find((c) => c.slug === cleanSlug);
+    return fallback || null;
+  }
   return data as Category;
 }
 

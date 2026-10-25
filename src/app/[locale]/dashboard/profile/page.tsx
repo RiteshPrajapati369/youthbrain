@@ -28,7 +28,7 @@ export default function DashboardProfilePage({ params: { locale } }: ProfilePage
     avatar_url: '/logo.jpg',
     email: 'panditritesh005@gmail.com',
     phone: '+977-9800000000',
-    location: 'Kathmandu, Nepal',
+    location: 'Hetauda, Nepal',
     status: 'active',
     created_at: '',
     updated_at: '',
